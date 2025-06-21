@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "gui",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["dev", "--login", "gui"],
+      "runtimeExecutable": "yarn",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "qq-bot",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["dev", "--login", "qq-bot"],
+      "runtimeExecutable": "yarn",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "jsxp",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["dev", "--view"],
+      "runtimeExecutable": "yarn",
+      "skipFiles": ["<node_internals>/**"],
+      "preLaunchTask": "open-browser"
+    }
+  ]
+}
