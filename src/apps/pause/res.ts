@@ -1,7 +1,7 @@
 import { Text, useMessage } from 'alemonjs';
 import { setPause } from '@src/models/github.sub.status';
 import { selects } from '@src/apps/index';
-export const regular = /^(!|！|\/)?(开启|启动|打开)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)订阅服务$/;
+export const regular = /^(!|！|\/)?(暂停|停止|关闭)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)订阅服务$/;
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
@@ -13,8 +13,8 @@ export default onResponse(selects, async e => {
         const chatType = 'message.create';
         const chatId = e.SpaceId;
         if (regular.test(e.MessageText)) {
-            await setPause(chatType, chatId, false);
-            message.send(format(Text('✅ 本群GitHub订阅服务已恢复')));
+            await setPause(chatType, chatId, true);
+            message.send(format(Text('✅ 本群GitHub订阅服务已暂停')));
             return;
         }
     }
@@ -22,8 +22,8 @@ export default onResponse(selects, async e => {
         const chatType = 'private.message.create';
         const chatId = e.OpenId;
         if (regular.test(e.MessageText)) {
-            await setPause(chatType, chatId, false);
-            message.send(format(Text('✅ 本私聊GitHub订阅服务已恢复')));
+            await setPause(chatType, chatId, true);
+            message.send(format(Text('✅ 本私聊GitHub订阅服务已暂停')));
             return;
         }
     }
