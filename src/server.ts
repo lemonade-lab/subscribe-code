@@ -113,24 +113,29 @@ router.post('/github/webhook', async (ctx, next) => {
 
     const repo = payload.repository?.full_name;
     if (!repo) {
+        ctx.status = 202;
         ctx.body = { status: 'no repo' };
         console.log(chalk.bgRed.white('[GitHub Webhook]'), chalk.red('未找到仓库信息，忽略本次推送'));
         return;
     }
     const message = formatGithubEvent(event, payload);
     if (!message) {
+        ctx.status = 202;
         ctx.body = { status: 'ignored' };
         console.log(chalk.bgGray.black('[GitHub Webhook]'), chalk.gray('事件未生成消息，已忽略'));
         return;
     }
-    console.log(
-        chalk.bgGreen.black('[GitHub Webhook]'),
-        chalk.green('发送消息:'),
-        chalk.bold(message),
-        chalk.green('from repo:'),
-        chalk.bold(repo)
-    );
     const subs = await getSubscriptionsByRepo(repo);
+    if (!subs || subs.length === 0) {
+        ctx.status = 202; // 明确告知已接受但未处理
+        ctx.body = { status: 'no subscription', message: 'bot未有任何聊天订阅该仓库，消息未发送' };
+        console.log(
+            chalk.bgYellow.black('[GitHub Webhook]'),
+            chalk.yellow('没有订阅该仓库，消息未发送：'),
+            chalk.gray(repo)
+        );
+        return;
+    }
     for (const sub of subs) {
         if (await isPaused(sub.chatType, sub.chatId)) {
             console.log(
@@ -141,6 +146,13 @@ router.post('/github/webhook', async (ctx, next) => {
             );
             continue;
         }
+        console.log(
+            chalk.bgGreen.black('[GitHub Webhook]'),
+            chalk.green('发送消息:'),
+            chalk.bold(message),
+            chalk.green('from repo:'),
+            chalk.bold(repo)
+        );
         await sendMessage(sub.chatType, sub.chatId, message);
     }
     ctx.body = { status: 'ok' };
