@@ -1,39 +1,57 @@
-import fs from 'fs';
-import path from 'path';
-import yaml from 'js-yaml';
+import { getConfig, getConfigValue } from 'alemonjs';
 
-const configPath = path.resolve(process.cwd(), 'alemon.config.yaml');
+/**
+ * 获取配置项
+ */
+export const configValue = getConfigValue();
 
-let config: any = {};
-let listeners: Array<(cfg: any) => void> = [];
+const config = getConfig();
+/**
+ * 通用配置更新方法
+ * @param key 配置项键名
+ * @param value 新值或更新函数
+ * @param options 可选参数：{ merge: boolean }，对象时是否合并
+ * 1. 设置/修改一个字符串配置项
+ * updateConfig('github_secret', 'my-new-secret');
+ * 
+ * 2. 设置/修改一个对象配置项（覆盖原有对象）
+ * updateConfig('github', { token: 'xxx', user: 'alemon' });
+ * 
+ * 3. 合并对象配置项（只更新部分字段，保留其他字段）
+ * updateConfig('github', { token: 'yyy' }, { merge: true });
+ * 
+ * 4. 添加元素到数组配置项（自动初始化为数组并避免重复）
+ * updateConfig('apps', (apps) => {
+    if (!Array.isArray(apps)) apps = [];
+    if (!apps.includes('@alemonjs/db')) apps.push('@alemonjs/db');
+    return apps;
+ * });
+ * 
+ * 5. 移除数组中的某个元素
+ * updateConfig('apps', (apps) => {
+    if (!Array.isArray(apps)) return [];
+    return apps.filter(app => app !== '@alemonjs/db');
+ * });
+ * 
+ * 6. 递增一个数字配置项
+ * updateConfig('count', (count) => typeof count === 'number' ? count + 1 : 1);
+ * 
+ * 7. 初始化不存在的配置项
+ * updateConfig('foo', (foo) => foo ?? 'bar');
+ * 
+ * 8. 初始化 foo 配置项为字符串（如果不存在或不是字符串则赋默认值）
+ * updateConfig('foo', (old) => (typeof old === 'string' ? old : '默认值'));
+ */
+export function updateConfig(key: string, value: any | ((oldValue: any) => any), options?: { merge?: boolean }) {
+    const val = config.value;
+    let newValue = typeof value === 'function' ? value(val[key]) : value;
 
-// 读取并解析配置
-function loadConfig() {
-    try {
-        const file = fs.readFileSync(configPath, 'utf8');
-        config = yaml.load(file) || {};
-        listeners.forEach(fn => fn(config));
-        console.log('[Github-Bot] [Config] 配置已更新:', config);
-    } catch (e: any) {
-        console.warn('[Github-Bot] [Config] 读取配置失败:', e.message);
+    // 如果是对象且需要合并
+    if (options?.merge && typeof val[key] === 'object' && typeof newValue === 'object') {
+        newValue = { ...val[key], ...newValue };
     }
+
+    val[key] = newValue;
+    config.saveValue(val);
+    return val;
 }
-
-// 监听配置文件变更
-fs.watchFile(configPath, { interval: 1000 }, () => {
-    console.log('[Github-Bot] [Config] 检测到 alemon.config.yaml 变更，重新加载...');
-    loadConfig();
-});
-
-// 导出获取配置的方法
-export function getConfig<T = any>(): T {
-    return config as T;
-}
-
-// 支持外部监听配置变化
-export function onConfigChange(fn: (cfg: any) => void) {
-    listeners.push(fn);
-}
-
-// 启动时加载一次
-loadConfig();

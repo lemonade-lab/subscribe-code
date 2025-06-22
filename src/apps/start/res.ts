@@ -12,19 +12,15 @@ export default onResponse(selects, async e => {
     if (e.name === 'message.create' && e.MessageId) {
         const chatType = 'message.create';
         const chatId = e.SpaceId;
-        if (regular.test(e.MessageText)) {
-            await setPause(chatType, chatId, false);
-            message.send(format(Text('✅ 本群GitHub订阅服务已恢复')));
-            return;
-        }
+        await setPause(chatType, chatId, false);
+        message.send(format(Text('✅ 本群GitHub订阅服务已恢复')));
+        return;
     }
     if (e.name === 'private.message.create' && e.MessageId) {
         const chatType = 'private.message.create';
         const chatId = e.OpenId;
-        if (regular.test(e.MessageText)) {
-            await setPause(chatType, chatId, false);
-            message.send(format(Text('✅ 本私聊GitHub订阅服务已恢复')));
-            return;
-        }
+        await setPause(chatType, chatId, false);
+        message.send(format(Text('✅ 本私聊GitHub订阅服务已恢复')));
+        return;
     }
 });

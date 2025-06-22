@@ -29,7 +29,7 @@ sudo systemctl enable redis
 
 - Content type：`application/json`
 
-- Secret：填写你在`alemon.config.yaml`中配置的`github_secret`
+- Secret：填写自动生成保存在`alemon.config.yaml`中的`github_secret`值
 
 - 按需选择推送事件：
 
@@ -51,7 +51,7 @@ Bot本体根目录新建文件`alemomn.config.yaml`：
 
 ```yaml
 # 配置Github Webhook Secret
-github_secret: 'alemonjs-github-sub-secret' # Github Webhook Secret，默认设置为'alemonjs-github-sub-secret'
+github_secret: '' # Github Webhook Secret，第一次启动将自动生成并保存到配置文件，也可手动自定义为任意字符串
 ```
 
 - OneBot

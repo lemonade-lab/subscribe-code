@@ -1,15 +1,31 @@
+import { formatGithubEvent } from '@src/models/github.make.msg';
+import { sendMessage } from '@src/models/github.push.api';
+import { getSubscriptionsByRepo } from '@src/models/github.sub.data';
+import { isPaused } from '@src/models/github.sub.status';
+import { configValue, updateConfig } from '@src/utils/config';
+import chalk from 'chalk';
 import crypto from 'crypto';
 import Koa from 'koa';
 import Router from 'koa-router';
 import getRawBody from 'raw-body';
-import { formatGithubEvent } from './models/github.make.msg';
-import { getSubscriptionsByRepo } from './models/github.sub.data';
-import { sendMessage } from '@src/models/github.push.api';
-import { getConfig } from '@src/utils/config';
-import { isPaused } from '@src/models/github.sub.status';
 
-// 读取并解析 github_secret
-let GITHUB_SECRET = getConfig()?.github_secret || 'alemonjs-github-sub-secret';
+// 读取github_secret
+let GITHUB_SECRET = configValue?.github_secret;
+if (!GITHUB_SECRET) {
+    GITHUB_SECRET = crypto.randomBytes(12).toString('hex');
+    updateConfig('github_secret', GITHUB_SECRET);
+    console.log(
+        chalk.bgYellow.black('[GitHub Webhook]'),
+        chalk.yellow('未设置github_secret，已自动生成并保存:'),
+        chalk.bold(GITHUB_SECRET)
+    );
+} else {
+    console.log(
+        chalk.bgGreen.black('[GitHub Webhook]'),
+        chalk.green('已读取github_secret'),
+        chalk.yellow(GITHUB_SECRET)
+    );
+}
 
 const app = new Koa();
 const router = new Router();
@@ -21,7 +37,6 @@ function verifySignature(secret: string, rawBody: string, signature256: string |
     const sig = signature256.slice(7);
     const hmac = crypto.createHmac('sha256', secret);
     const digest = hmac.update(Buffer.from(rawBody, 'utf8')).digest('hex');
-    // 使用 timingSafeEqual 进行恒定时间比较
     try {
         return crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(digest, 'hex'));
     } catch {
@@ -31,24 +46,36 @@ function verifySignature(secret: string, rawBody: string, signature256: string |
 
 // 兼容 application/json 和 x-www-form-urlencoded
 router.post('/github/webhook', async (ctx, next) => {
-    // 限制 payload 大小
     if (ctx.request.length && ctx.request.length > 25 * 1024 * 1024) {
         ctx.status = 413;
         ctx.body = { status: 'payload too large' };
         return;
     }
 
-    // 捕获原始 body
     const rawBody = await getRawBody(ctx.req, { encoding: 'utf8' });
     ctx.request.rawBody = rawBody;
 
-    // 解析 JSON
     let payload: any;
+    const contentType = ctx.headers['content-type'] || '';
     try {
-        payload = JSON.parse(rawBody);
+        if (contentType.includes('application/json')) {
+            payload = JSON.parse(rawBody);
+        } else if (contentType.includes('application/x-www-form-urlencoded')) {
+            const params = new URLSearchParams(rawBody);
+            const payloadStr = params.get('payload');
+            if (!payloadStr) throw new Error('no payload');
+            payload = JSON.parse(payloadStr);
+        } else {
+            throw new Error('unsupported content-type');
+        }
     } catch (e) {
         ctx.status = 400;
-        ctx.body = { status: 'invalid json' };
+        ctx.body = { status: 'invalid payload' };
+        console.log(
+            chalk.bgRed.white('[GitHub Webhook]'),
+            chalk.red('Payload 解析失败，content-type:'),
+            chalk.yellow(contentType)
+        );
         return;
     }
 
@@ -58,13 +85,25 @@ router.post('/github/webhook', async (ctx, next) => {
     const userAgent = ctx.headers['user-agent'];
 
     // 记录请求头
-    console.log(`[GitHub Webhook] Event: ${event}, Delivery: ${delivery}, UA: ${userAgent}`);
+    console.log(
+        chalk.bgCyan.black('[GitHub Webhook]'),
+        chalk.cyan(`Event:`),
+        chalk.bold(event),
+        chalk.cyan(`Delivery:`),
+        chalk.bold(delivery),
+        chalk.cyan(`UA:`),
+        chalk.gray(userAgent)
+    );
 
     // 校验签名
-    console.log(`[GitHub Webhook] secret: ${GITHUB_SECRET}`);
+    console.log(chalk.bgMagenta.black('[GitHub Webhook]'), chalk.magenta('secret:'), chalk.gray(GITHUB_SECRET));
     if (GITHUB_SECRET) {
         const verifySignatureValue = verifySignature(GITHUB_SECRET, rawBody, signature256);
-        console.log(`[GitHub Webhook] verifySignatureValue: ${verifySignatureValue}`);
+        console.log(
+            chalk.bgBlue.black('[GitHub Webhook]'),
+            chalk.blue('verifySignatureValue:'),
+            verifySignatureValue ? chalk.green('✔ 通过') : chalk.red('✘ 未通过')
+        );
         if (!verifySignatureValue) {
             ctx.status = 401;
             ctx.body = { status: 'invalid signature' };
@@ -75,19 +114,31 @@ router.post('/github/webhook', async (ctx, next) => {
     const repo = payload.repository?.full_name;
     if (!repo) {
         ctx.body = { status: 'no repo' };
+        console.log(chalk.bgRed.white('[GitHub Webhook]'), chalk.red('未找到仓库信息，忽略本次推送'));
         return;
     }
     const message = formatGithubEvent(event, payload);
     if (!message) {
         ctx.body = { status: 'ignored' };
+        console.log(chalk.bgGray.black('[GitHub Webhook]'), chalk.gray('事件未生成消息，已忽略'));
         return;
     }
-    console.log(`发送消息： ${message} from repo: ${repo}`);
+    console.log(
+        chalk.bgGreen.black('[GitHub Webhook]'),
+        chalk.green('发送消息:'),
+        chalk.bold(message),
+        chalk.green('from repo:'),
+        chalk.bold(repo)
+    );
     const subs = await getSubscriptionsByRepo(repo);
     for (const sub of subs) {
-        // 判断是否暂停
         if (await isPaused(sub.chatType, sub.chatId)) {
-            console.log(`订阅已暂停，跳过发送： [${sub.chatType}] [${sub.chatId}]`, `${repo}`);
+            console.log(
+                chalk.bgYellow.black('[GitHub Webhook]'),
+                chalk.yellow('订阅已暂停，跳过发送：'),
+                `[${sub.chatType}] [${sub.chatId}]`,
+                chalk.gray(repo)
+            );
             continue;
         }
         await sendMessage(sub.chatType, sub.chatId, message);
@@ -98,7 +149,20 @@ router.post('/github/webhook', async (ctx, next) => {
 // Add the router to the app
 app.use(router.routes()).use(router.allowedMethods());
 // Start the server
-const PORT = 3000;
+let PORT = configValue?.server_port;
+if (!PORT) {
+    PORT = 3000; // 默认端口
+    updateConfig('server_port', PORT);
+    console.log(
+        chalk.bgYellow.black('[GitHub Webhook Server]'),
+        chalk.yellow('未设置server_port，已自动设置为默认端口:'),
+        chalk.bold(PORT)
+    );
+}
 app.listen(PORT, () => {
-    console.log(`GitHub Subscribe Server is running on http://localhost:${PORT}`);
+    console.log(
+        chalk.bgBlue.white('[GitHub Webhook Server]'),
+        chalk.blue('服务已启动:'),
+        chalk.bold(`http://localhost:${PORT}`)
+    );
 });
