@@ -1,10 +1,8 @@
 # AlemonJS Github Dynamic Bot
 
-- 一个 `AlemonJS 机器人框架` 的Github动态机器人，可以自动推送Github仓库的动态到QQ、OneBot平台。
+- Github动态机器人，可以自动推送Github仓库的动态到OneBot平台。
 
-- 支持 群聊/私聊
-
-# 🚩运行环境：
+## 🚩运行环境：
 
 - node v22+ 下载地址：https://nodejs.org/zh-cn/download/
 
@@ -20,7 +18,7 @@ sudo systemctl start redis
 sudo systemctl enable redis
 ```
 
-# 一、🍄配置Github Webhook
+## 一、🍄配置Github Webhook
 
 > [!IMPORTANT]
 > 需后文bot指令订阅github仓库配合使用。
@@ -45,7 +43,7 @@ sudo systemctl enable redis
 
 - 点击`Add webhook`
 
-# 二、🚀配置启动bot
+## 二、🚀配置启动bot
 
 文档： [https://alemonjs.com/](https://alemonjs.com/)
 
@@ -72,60 +70,14 @@ onebot:
 yarn dev --login onebot # 启动OneBot开发机器人
 ```
 
-- QQ
-
-```sh
-yarn add @alemonjs/qq
-```
-
-> vlyjs 环境下登录时请增加参数 --no-watch 以关闭热重启
-
-- alemon.config.yaml
-
-```yaml
-qq:
-  # 账户
-  qq: ''
-  # 密码
-  password: ''
-  # 设备 1:安卓手机、 2:aPad 、 3:安卓手表、 4:MacOS 、 5:iPad 、 6:Tim
-  device: ''
-  # 签名
-  sign_api_addr: ''
-  # 版本
-  ver: ''
-  # 主人[platform:qq]哈希
-  master_key:
-    - ""
-  # 日志等级，默认info
-  log_level: 'info',
-  # 群聊和频道中过滤自己的消息
-  ignore_self: true,
-  # 被风控时是否尝试用分片发送
-  resend: true,
-  # 触发`system.offline.network`事件后的重新登录间隔秒数
-  reconn_interval: 5,
-  # 是否缓存群员列表
-  cache_group_member: true,
-  # ffmepg路径
-  ffmpeg_path: '',
-  ffprobe_path: ''
-```
-
-```sh
-yarn dev --login qq # 启动QQ开发机器人
-```
-
-# 运行
+- 运行
 
 ```sh
 # 启动机器人
 yarn dev --login onebot # 启动OneBot机器人
-# 或者
-yarn dev --login qq # 启动QQ机器人
 ```
 
-# 三、🎒订阅githu仓库
+## 三、🎒订阅githu仓库
 
 > [!IMPORTANT]
 > 需与配置Github Webhook部分配合使用。
@@ -143,13 +95,13 @@ yarn dev --login qq # 启动QQ机器人
 | 开启推送           | 开启本群聊/私聊Github仓库动态推送 | !开启仓库订阅服务                           |
 | 关闭推送           | 关闭本群聊/私聊Github仓库动态推送 | !关闭仓库订阅服务                           |
 
-# 开发
+## 开发
 
 开发文档 [https://lvyjs.dev/ ](https://lvyjs.dev/)
 
 使用文档 [https://alemonjs.com/](https://alemonjs.com/)
 
-## 开发指南
+### 开发指南
 
 [README_DEV](./README_DEV.md)
 

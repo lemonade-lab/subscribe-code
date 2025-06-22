@@ -5,7 +5,7 @@ import { addSubscription } from '@src/models/github.sub.data';
 
 // 优化后的正则表达式，强制要求后面有 github 仓库地址
 export const regular =
-    /^([!！\/])?(添加|订阅|add)(仓库|github仓库|GitHub仓库|GitHub代码仓库)?\s*(https?:\/\/)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
+    /^([!！/])?(添加|订阅|add)(仓库|github仓库|GitHub仓库|GitHub代码仓库)?\s*(https?:\/\/)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
 
 function extractRepoUrl(text: string): string | null {
     const match = text.trim().match(/github\.com\/([a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+)/);
