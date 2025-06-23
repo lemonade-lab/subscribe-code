@@ -91,6 +91,7 @@ yarn dev --login onebot # 启动OneBot机器人
 |                    |                                   |                                             |
 | 订阅Github代码仓库 | 订阅Github仓库动态                | !订阅github仓库github.com/username/reponame |
 | 查看订阅列表       | 查看当前已订阅的Github仓库        | !仓库列表                                   |
+| 查看全部订阅列表   | 查看当前已订阅的全部Github仓库    | !仓库全部列表                               |
 | 删除订阅           | 删除已订阅的Github仓库            | !删除仓库github.com/username/reponame       |
 | 开启推送           | 开启本群聊/私聊Github仓库动态推送 | !开启仓库订阅服务                           |
 | 关闭推送           | 关闭本群聊/私聊Github仓库动态推送 | !关闭仓库订阅服务                           |

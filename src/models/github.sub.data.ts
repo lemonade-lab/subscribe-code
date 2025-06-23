@@ -83,3 +83,18 @@ export async function listSubscriptions(chatType: string, chatId: string): Promi
     const sub = subs.find(s => s.chatType === chatType && s.chatId === chatId);
     return sub ? sub.repos : [];
 }
+
+/**
+ * 查看某类型下全部订阅
+ * @param chatType 聊天类型
+ * @return 返回该类型下所有订阅 [{ chatId, repos }]
+ */
+export async function listAllSubscriptionsByType(chatType: string): Promise<{ chatId: string; repos: string[] }[]> {
+    const subs = await loadSubscriptions();
+    return subs
+        .filter(s => s.chatType === chatType)
+        .map(s => ({
+            chatId: s.chatId,
+            repos: s.repos
+        }));
+}

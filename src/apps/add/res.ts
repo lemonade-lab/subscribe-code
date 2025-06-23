@@ -15,7 +15,7 @@ function extractRepoUrl(text: string): string | null {
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
     if (e.Platform !== onebot) {
-        message.send(format(Text('非onebot，暂不支持')));
+        message.send(format(Text('非onebot平台，暂不支持')));
         return;
     }
 

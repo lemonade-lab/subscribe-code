@@ -7,7 +7,7 @@ export const regular =
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
     if (e.Platform !== onebot) {
-        message.send(format(Text('暂不支持')));
+        message.send(format(Text('非OneBot平台，暂不支持')));
         return;
     }
 
