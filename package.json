@@ -1,8 +1,8 @@
 {
     "name": "alemonjs-github",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "github动态订阅",
-    "author": "ningmengchongshui",
+    "author": "snowtafir, ningmengchongshui",
     "type": "module",
     "private": true,
     "main": "./lib/index.js",

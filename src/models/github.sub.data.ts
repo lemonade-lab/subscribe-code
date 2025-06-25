@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { getIoRedis } from '@alemonjs/db';
 
 const ioRedis = getIoRedis();
@@ -5,12 +6,15 @@ const ioRedis = getIoRedis();
 export interface Subscription {
     chatType: string;
     chatId: string;
-    repos: string[];
+    repos: { repo: string; id: string }[];
 }
 
 const REDIS_KEY = 'alemonjs:githubBot:subsData';
 
-// 异步加载所有订阅
+/** * 从Redis加载所有订阅
+ * @returns 返回订阅列表
+ * @throws 如果数据解析失败，则返回空数组
+ */
 async function loadSubscriptions(): Promise<Subscription[]> {
     const data = await ioRedis.get(REDIS_KEY);
     if (!data) return [];
@@ -19,6 +23,18 @@ async function loadSubscriptions(): Promise<Subscription[]> {
     } catch {
         return [];
     }
+}
+
+/**
+ * 生成订阅ID
+ * @param chatType 聊天类型
+ * @param chatId 空间ID
+ * @param repoUrl 仓库URL
+ * @returns 返回生成的订阅ID
+ */
+export function genSubId(chatType: string, chatId: string, repoUrl: string): string {
+    const str = `${chatType}:${chatId}:${repoUrl}`;
+    return crypto.createHash('md5').update(str).digest('hex').slice(0, 8);
 }
 
 // 异步保存所有订阅
@@ -32,7 +48,7 @@ async function saveSubscriptions(subs: Subscription[]) {
  */
 export async function getSubscriptionsByRepo(repo: string): Promise<{ chatType: string; chatId: string }[]> {
     const subs = await loadSubscriptions();
-    return subs.filter(s => s.repos.includes(repo)).map(s => ({ chatType: s.chatType, chatId: s.chatId }));
+    return subs.filter(s => s.repos.some(r => r.repo === repo)).map(s => ({ chatType: s.chatType, chatId: s.chatId }));
 }
 
 /**
@@ -44,11 +60,12 @@ export async function getSubscriptionsByRepo(repo: string): Promise<{ chatType: 
 export async function addSubscription(chatType: string, chatId: string, repo: string) {
     const subs = await loadSubscriptions();
     let sub = subs.find(s => s.chatType === chatType && s.chatId === chatId);
+    const id = genSubId(chatType, chatId, repo);
     if (!sub) {
-        sub = { chatType, chatId, repos: [repo] };
+        sub = { chatType, chatId, repos: [{ repo, id }] };
         subs.push(sub);
-    } else if (!sub.repos.includes(repo)) {
-        sub.repos.push(repo);
+    } else if (!sub.repos.some(r => r.repo === repo)) {
+        sub.repos.push({ repo, id });
     }
     await saveSubscriptions(subs);
 }
@@ -59,26 +76,60 @@ export async function addSubscription(chatType: string, chatId: string, repo: st
  * @param chatId 空间ID
  * @param repo 仓库名
  */
-export async function removeSubscription(chatType: string, chatId: string, repo: string) {
+export async function removeSubscriptionByUrl(chatType: string, chatId: string, repo: string) {
     const subs = await loadSubscriptions();
     const sub = subs.find(s => s.chatType === chatType && s.chatId === chatId);
     if (sub) {
-        sub.repos = sub.repos.filter(r => r !== repo);
+        sub.repos = sub.repos.filter(r => r.repo !== repo);
         if (sub.repos.length === 0) {
             const idx = subs.indexOf(sub);
             subs.splice(idx, 1);
         }
         await saveSubscriptions(subs);
+        return true;
+    } else {
+        return false; // 没有找到对应的订阅
     }
+}
+
+/**
+ * 通过订阅编号id删除某个订阅
+ * @param id 订阅编号
+ * @returns 是否删除成功
+ */
+export async function removeSubscriptionById(id: string): Promise<boolean> {
+    const subs = await loadSubscriptions();
+    let found = false;
+
+    // 遍历所有订阅，查找并移除包含该id的repo
+    for (const sub of subs) {
+        const index = sub.repos.findIndex(r => r.id === id);
+        if (index !== -1) {
+            sub.repos.splice(index, 1);
+            found = true;
+        }
+    }
+
+    // 移除repos为空的订阅项
+    for (let i = subs.length - 1; i >= 0; i--) {
+        if (subs[i].repos.length === 0) {
+            subs.splice(i, 1);
+        }
+    }
+
+    if (found) {
+        await saveSubscriptions(subs);
+    }
+    return found;
 }
 
 /**
  * 查看订阅
  * @param chatType 聊天类型
  * @param chatId 空间ID
- * @return 返回订阅的仓库列表
+ * @return 返回订阅的仓库列表（带id）
  */
-export async function listSubscriptions(chatType: string, chatId: string): Promise<string[]> {
+export async function listSubscriptions(chatType: string, chatId: string): Promise<{ repo: string; id: string }[]> {
     const subs = await loadSubscriptions();
     const sub = subs.find(s => s.chatType === chatType && s.chatId === chatId);
     return sub ? sub.repos : [];
@@ -89,7 +140,9 @@ export async function listSubscriptions(chatType: string, chatId: string): Promi
  * @param chatType 聊天类型
  * @return 返回该类型下所有订阅 [{ chatId, repos }]
  */
-export async function listAllSubscriptionsByType(chatType: string): Promise<{ chatId: string; repos: string[] }[]> {
+export async function listAllSubscriptionsByType(
+    chatType: string
+): Promise<{ chatId: string; repos: { repo: string; id: string }[] }[]> {
     const subs = await loadSubscriptions();
     return subs
         .filter(s => s.chatType === chatType)

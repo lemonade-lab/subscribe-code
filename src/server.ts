@@ -1,7 +1,7 @@
 import { formatGithubEvent } from '@src/models/github.make.msg';
 import { sendMessage } from '@src/models/github.push.api';
-import { getSubscriptionsByRepo } from '@src/models/github.sub.data';
-import { isPaused } from '@src/models/github.sub.status';
+import { genSubId, getSubscriptionsByRepo } from '@src/models/github.sub.data';
+import { isPaused, isPausedById } from '@src/models/github.sub.status';
 import { configValue, updateConfig } from '@src/utils/config';
 import chalk from 'chalk';
 import crypto from 'crypto';
@@ -10,10 +10,10 @@ import Router from 'koa-router';
 import getRawBody from 'raw-body';
 
 // 读取github_secret
-let GITHUB_SECRET = configValue?.github_secret;
+let GITHUB_SECRET = configValue?.['alemonjs-code']?.github_secret;
 if (!GITHUB_SECRET) {
     GITHUB_SECRET = crypto.randomBytes(12).toString('hex');
-    updateConfig('github_secret', GITHUB_SECRET);
+    updateConfig('alemonjs-code', { github_secret: GITHUB_SECRET });
     console.log(
         chalk.bgYellow.black('[GitHub Webhook]'),
         chalk.yellow('未设置github_secret，已自动生成并保存:'),
@@ -114,14 +114,14 @@ router.post('/github/webhook', async (ctx, next) => {
     const repo = payload.repository?.full_name;
     if (!repo) {
         ctx.status = 202;
-        ctx.body = { status: 'no repo' };
+        ctx.body = { status: 'no repo found, ignored' };
         console.log(chalk.bgRed.white('[GitHub Webhook]'), chalk.red('未找到仓库信息，忽略本次推送'));
         return;
     }
     const message = formatGithubEvent(event, payload);
     if (!message) {
         ctx.status = 202;
-        ctx.body = { status: 'ignored' };
+        ctx.body = { status: 'message not generated, ignored' };
         console.log(chalk.bgGray.black('[GitHub Webhook]'), chalk.gray('事件未生成消息，已忽略'));
         return;
     }
@@ -137,11 +137,22 @@ router.post('/github/webhook', async (ctx, next) => {
         return;
     }
     for (const sub of subs) {
+        // 相同参数生成恒定唯一订阅编号进行查询
+        const subId = genSubId(sub.chatType, sub.chatId, repo);
         if (await isPaused(sub.chatType, sub.chatId)) {
             console.log(
                 chalk.bgYellow.black('[GitHub Webhook]'),
-                chalk.yellow('订阅已暂停，跳过发送：'),
+                chalk.yellow('该聊天的推送已暂停，跳过发送：'),
                 `[${sub.chatType}] [${sub.chatId}]`,
+                chalk.gray(repo)
+            );
+            continue;
+        }
+        if (await isPausedById(subId)) {
+            console.log(
+                chalk.bgYellow.black('[GitHub Webhook]'),
+                chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
+                `[${sub.chatType}] [${sub.chatId}] [${subId}]`,
                 chalk.gray(repo)
             );
             continue;
@@ -161,10 +172,10 @@ router.post('/github/webhook', async (ctx, next) => {
 // Add the router to the app
 app.use(router.routes()).use(router.allowedMethods());
 // Start the server
-let PORT = configValue?.server_port;
+let PORT = configValue?.['alemonjs-code']?.server_port;
 if (!PORT) {
     PORT = 3000; // 默认端口
-    updateConfig('server_port', PORT);
+    updateConfig('alemonjs-code', { server_port: PORT });
     console.log(
         chalk.bgYellow.black('[GitHub Webhook Server]'),
         chalk.yellow('未设置server_port，已自动设置为默认端口:'),
