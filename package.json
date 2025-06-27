@@ -1,6 +1,6 @@
 {
     "name": "alemonjs-github",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "github动态订阅",
     "author": "snowtafir, ningmengchongshui",
     "type": "module",
@@ -31,7 +31,8 @@
         "jsxp": "1.2.2",
         "koa": "^3.0.0",
         "koa-router": "^13.0.1",
-        "raw-body": "^3.0.0"
+        "raw-body": "^3.0.0",
+        "ws": "8.18.2"
     },
     "devDependencies": {
         "@alemonjs/db": "^0.0.9",
@@ -60,6 +61,6 @@
         "sass": "^1.83.0",
         "tailwindcss": "^3",
         "typescript-eslint": "^8.13.0",
-        "ws": "8.18.1"
+        "ws": "8.18.2"
     }
 }

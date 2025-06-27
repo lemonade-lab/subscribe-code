@@ -9,6 +9,17 @@ import Koa from 'koa';
 import Router from 'koa-router';
 import getRawBody from 'raw-body';
 
+let PORT = configValue?.['alemonjs-code']?.webhook_port;
+if (!PORT) {
+    PORT = 3000; // 默认端口
+    updateConfig('alemonjs-code', { webhook_port: PORT });
+    console.log(
+        chalk.bgYellow.black('[GitHub Webhook Server]'),
+        chalk.yellow('未设置webhook_port，已自动设置为默认端口:'),
+        chalk.bold(PORT)
+    );
+}
+
 // 读取github_secret
 let GITHUB_SECRET = configValue?.['alemonjs-code']?.github_secret;
 if (!GITHUB_SECRET) {
@@ -172,16 +183,6 @@ router.post('/github/webhook', async (ctx, next) => {
 // Add the router to the app
 app.use(router.routes()).use(router.allowedMethods());
 // Start the server
-let PORT = configValue?.['alemonjs-code']?.server_port;
-if (!PORT) {
-    PORT = 3000; // 默认端口
-    updateConfig('alemonjs-code', { server_port: PORT });
-    console.log(
-        chalk.bgYellow.black('[GitHub Webhook Server]'),
-        chalk.yellow('未设置server_port，已自动设置为默认端口:'),
-        chalk.bold(PORT)
-    );
-}
 app.listen(PORT, () => {
     console.log(
         chalk.bgBlue.white('[GitHub Webhook Server]'),

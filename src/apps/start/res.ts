@@ -12,7 +12,7 @@ export const regular = new RegExp(`${startAllReg.source}|${startByIdReg.source}`
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
     if (!(isOwner(e) || isAdmin(e.UserKey))) {
-        message.send(format(Text('只有管理员可以暂停订阅')));
+        message.send(format(Text('只有主人或管理员可以暂停订阅')));
         return;
     }
     if (startAllReg.test(e.MessageText)) {

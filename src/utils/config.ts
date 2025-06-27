@@ -9,20 +9,52 @@ export const configValue = getConfigValue();
 const config = getConfig();
 
 // 初始化缺失的配置项
-if (!config.value['alemonjs-code']) {
-    updateConfig('alemonjs-code', {
-        github_secret: '',
-        server_port: '',
-        admins_id: []
-        // 其他必要键可以在这里初始化
-    });
+const defaultAlemonjsCodeConfig = {
+    github_secret: '',
+    webhook_port: '',
+    admins_id: []
+    // 其他必要键可以在这里初始化
+};
+
+const defaultOneBotConfig = {
+    url: '', // 正向url
+    token: '', // access_token
+    reverse_enable: false, // 启用后正向连接配置失效
+    reverse_port: 17158, // 返向连接服务端口
+    master_key: []
+};
+
+/**
+ * 自动补全 alemonjs-code 和 onebot 缺失的键
+ */
+export function ensureDefaultConfig() {
+    const val = config.value;
+    if (!val['alemonjs-code']) {
+        val['alemonjs-code'] = { ...defaultAlemonjsCodeConfig };
+    } else {
+        for (const key in defaultAlemonjsCodeConfig) {
+            if (!(key in val['alemonjs-code'])) {
+                val['alemonjs-code'][key] = defaultAlemonjsCodeConfig[key];
+            }
+        }
+    }
+    if (!val['onebot']) {
+        val['onebot'] = { ...defaultOneBotConfig };
+    } else {
+        for (const key in defaultOneBotConfig) {
+            if (!(key in val['onebot'])) {
+                val['onebot'][key] = defaultOneBotConfig[key];
+            }
+        }
+    }
+    config.saveValue(val);
 }
 
 /**
  * 通用配置更新方法
  * @param key 配置项键名
  * @param value 新值或更新函数
- * @param options 可选参数：{ merge: boolean，unique?: boolean }，对象时是否合并
+ * @param options 可选参数：{ merge: boolean，unique?: boolean }，对象时是否合并以及数组时是否去重，默认 merge 为 true，unique 为 true
  * 1. 设置/修改一个字符串配置项
  * updateConfig('github_secret', 'my-new-secret');
  * 
@@ -57,7 +89,7 @@ if (!config.value['alemonjs-code']) {
 export function updateConfig(
     key: string,
     value: any | ((oldValue: any) => any),
-    options?: { merge?: boolean; unique?: boolean }
+    options: { merge?: boolean; unique?: boolean } = { merge: true, unique: true }
 ) {
     const val = config.value;
     let newValue = typeof value === 'function' ? value(val[key]) : value;
