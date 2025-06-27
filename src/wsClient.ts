@@ -23,7 +23,7 @@ if (!WS_SECRET) {
 
 let WS_SERVER_URL = configValue?.['alemonjs-code']?.ws_server_url;
 if (!WS_SERVER_URL) {
-    WS_SERVER_URL = 'ws://127.0.0.1:3101/ws-client'; // 请替换为你的中转服务地址
+    WS_SERVER_URL = 'ws://127.0.0.1:18555/ws-client'; // 请替换为你的中转服务地址
     updateConfig('alemonjs-code', { ws_server_url: WS_SERVER_URL });
     console.log(
         chalk.bgYellow.black('[WebSocket Client]'),

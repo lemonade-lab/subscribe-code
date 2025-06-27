@@ -9,9 +9,9 @@ import Koa from 'koa';
 import Router from 'koa-router';
 import getRawBody from 'raw-body';
 
-let PORT = configValue?.['alemonjs-code']?.webhook_port;
+let PORT: number = configValue?.['alemonjs-code']?.webhook_port;
 if (!PORT) {
-    PORT = 3000; // 默认端口
+    PORT = 18666; // 默认端口
     updateConfig('alemonjs-code', { webhook_port: PORT });
     console.log(
         chalk.bgYellow.black('[GitHub Webhook Server]'),
