@@ -34,9 +34,9 @@ yarn dev # 启动中转服务
 ```yaml
 alemonjs-code-wss:
     ws_secret: xxxxx # 中转服务自动生成的ws_secret，需与客户端配置文件一致
-    ws_server_port: 3101 # 中转服务端口，需与客户端配置文件url的端口一致
+    ws_server_port: 18555 # 中转服务端口，需与客户端配置文件url的端口一致
     github_secret: xxxxx # 将自动生成并保存到配置文件，与Github Webhook配置时填写的一致
-    webhook_port: 3000 # Github Webhook服务端口，与Github Webhook的url时填写的一致
+    webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
 ```
 
 2. 配置本地客户端配置文件`alemomn.config.yaml`：
@@ -45,7 +45,7 @@ alemonjs-code-wss:
 alemonjs-code:
     server_mode: wsClient
     ws_secret: xxxxxx # 复制中转服务配置文件的ws_secret，需与中转服务配置文件一致
-    ws_server_url: ws://127.0.0.1:3101/ws-client # 中转服务地址，替换为实际中转服务（内网/公网）地址
+    ws_server_url: ws://127.0.0.1:18555/ws-client # 中转服务地址，替换为实际中转服务（内网/公网）地址
 ```
 
 ```sh

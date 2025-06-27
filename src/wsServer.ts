@@ -32,7 +32,7 @@ if (!GITHUB_SECRET) {
 // WebSocket 服务端口
 let WSS_PORT: number = configValue?.['alemonjs-code-wss']?.ws_server_port;
 if (!WSS_PORT) {
-    WSS_PORT = 3101;
+    WSS_PORT = 18555;
     updateConfig('alemonjs-code-wss', { ws_server_port: WSS_PORT });
     console.log(
         chalk.bgYellow.black('[WebSocket Server]'),
@@ -292,8 +292,8 @@ router.post('/github/webhook', async ctx => {
 app.use(router.routes()).use(router.allowedMethods());
 let webhook_port = configValue?.['alemonjs-code-wss']?.webhook_port;
 if (!webhook_port) {
-    webhook_port = 3000; // 默认端口
-    await updateConfig('alemonjs-code-wss', { webhook_port: webhook_port });
+    webhook_port = 18666; // 默认端口
+    updateConfig('alemonjs-code-wss', { webhook_port: webhook_port });
     console.log(
         chalk.bgYellow.black('[GitHub Webhook Server]'),
         chalk.yellow('未设置webhook_port，已自动设置为默认端口:'),
