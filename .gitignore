@@ -1,0 +1,12 @@
+# Node dependencies
+node_modules
+/logs
+/gui
+/dist
+/lib
+*.log
+.env.*
+yarn.lock
+*.memory-card.json
+/.data
+/alemon*
