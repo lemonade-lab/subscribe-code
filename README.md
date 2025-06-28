@@ -50,9 +50,10 @@ sudo systemctl enable redis
 Bot本体根目录新建文件`alemomn.config.yaml`：
 
 ```yaml
-# 配置Github Webhook Secret
-github_secret: '' # Github Webhook Secret，第一次启动将自动生成并保存到配置文件，也可手动自定义为任意字符串
-server_mode: webhook # 运行模式，本地接收github webhook推送模式需配置Github Webhook，wsClient模式看下文
+alemonjs-code:
+    # 配置Github Webhook Secret
+    github_secret: '' # Github Webhook Secret，第一次启动将自动生成并保存到配置文件，也可手动自定义为任意字符串
+    server_mode: webhook # 运行模式，本地接收github webhook推送模式需配置Github Webhook，中转wsClient模式看下文
 ```
 
 - OneBot
@@ -99,7 +100,7 @@ yarn dev --login onebot # 启动OneBot机器人
 | 开启本聊天的全部推送   | 开启本群聊的Github仓库动态推送，权限owner/admin                                                          | `!开启仓库推送`                                              |
 | 关闭本聊天的全部推送   | 关闭本群聊的Github仓库动态推送，权限owner/admin                                                          | `!关闭仓库推送`                                              |
 | 开启某个仓库推送       | 启用某个已订阅的Github仓库动态推送，编号可通过`!仓库列表`查看，权限owner/admin                           | `!开启编号仓库xxxxx`                                         |
-| 关闭某个仓库推送       | 启用某个已订阅的Github仓库动态推送，编号可通过`!仓库列表`查看，权限owner/admin                           | `!关闭编号仓库xxxxxx`                                        |
+| 关闭某个仓库推送       | 关闭某个已订阅的Github仓库动态推送，编号可通过`!仓库列表`查看，权限owner/admin                           | `!关闭编号仓库xxxxxx`                                        |
 | 添加仓库订阅管理员     | 添加某个群聊成员为Github仓库订阅管理员，权限owner，userKey可通过后台成员消息日志查看                     | `!新增仓库订阅管理员 @user` 或 `!新增仓库订阅管理员 userKey` |
 | 删除仓库订阅管理员     | 从管理员列表删除某个仓库订阅管理员，权限owner，userKey可通过后台成员消息日志查看                         | `!删除仓库订阅管理员 @user` 或 `!删除仓库订阅管理员 userKey` |
 
@@ -111,7 +112,7 @@ yarn dev --login onebot # 启动OneBot机器人
 git clone -b wss https://github.com/lemonade-lab/subscribe-code.git ./subscribe-code-wss
 cd subscribe-code-wss
 yarn install
-yarn dev # 启动中转服务
+yarn dev # 启动中转服务，首次将自动生成配置文件alemomn.config.yaml
 ```
 
 - 修改中转服务配置文件`alemomn.config.yaml`：
@@ -122,6 +123,12 @@ alemonjs-code-wss:
     ws_server_port: 18555 # 中转服务端口，需与客户端配置文件url的端口一致
     github_secret: xxxxx # 将自动生成并保存到配置文件，与Github Webhook配置时填写的一致
     webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
+```
+
+Ctrl+C 退出服务，再次启动：
+
+```sh
+yarn dev
 ```
 
 2. 配置本地客户端配置文件`alemomn.config.yaml`：

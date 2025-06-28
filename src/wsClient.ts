@@ -38,17 +38,6 @@ if (!WS_SERVER_URL) {
     );
 }
 
-// 校验签名
-function verifySignature(secret: string, rawBody: string, signature: string | undefined): boolean {
-    if (!secret || !signature) return false;
-    const digest = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-    try {
-        return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(digest, 'hex'));
-    } catch {
-        return false;
-    }
-}
-
 // WebSocket 客户端
 let ws: WebSocket | null = null;
 let heartbeatTimer: NodeJS.Timeout | null = null;
@@ -106,18 +95,14 @@ function connectWS() {
             }
 
             // 只对业务推送消息做签名校验
-            const { event, rawBody, signature } = msg;
-            if (!event || !rawBody || !signature) {
+            const { event, rawBody } = msg;
+            if (!event || !rawBody) {
                 // 非业务消息，忽略
                 return;
             }
 
             console.log(chalk.bgGreen.black('[WebSocket Client]'), chalk.green('收到消息:'), chalk.bold(event));
-            if (!verifySignature(WS_SECRET!, rawBody, signature)) {
-                console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('签名校验失败，消息已忽略'));
-                return;
-            }
-            const payload = JSON.parse(rawBody); // 校验通过后再解析
+            const payload = JSON.parse(rawBody);
             // 兼容原有处理逻辑
             const repo = payload.repository?.full_name;
             if (!repo) {

@@ -41,7 +41,12 @@ if (!GITHUB_SECRET) {
 const app = new Koa();
 const router = new Router();
 
-// 校验 GitHub Webhook 签名（严格按官方文档）
+/** 校验 GitHub Webhook 签名
+ * @param secret 签名密钥
+ * @param rawBody 原始请求体
+ * @param signature 签名
+ * @returns 是否通过签名校验
+ */
 function verifySignature(secret: string, rawBody: string, signature256: string | undefined): boolean {
     if (!secret || !signature256) return false;
     if (!signature256.startsWith('sha256=')) return false;
@@ -112,8 +117,10 @@ router.post('/github/webhook', async (ctx, next) => {
         const verifySignatureValue = verifySignature(GITHUB_SECRET, rawBody, signature256);
         console.log(
             chalk.bgBlue.black('[GitHub Webhook]'),
-            chalk.blue('verifySignatureValue:'),
-            verifySignatureValue ? chalk.green('✔ 通过') : chalk.red('✘ 未通过')
+            chalk.blue('verify Secret:'),
+            verifySignatureValue
+                ? chalk.green('✔ 通过')
+                : chalk.red('✘ 未通过，请检查配置项github_secret是否与github webhook配置一致')
         );
         if (!verifySignatureValue) {
             ctx.status = 401;
