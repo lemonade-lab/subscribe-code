@@ -197,12 +197,12 @@ setInterval(() => {
     }
 }, HEARTBEAT_INTERVAL);
 
-// 生成ws签名
-function signPayload(rawBody: string) {
-    return crypto.createHmac('sha256', WS_SECRET).update(rawBody).digest('hex');
-}
-
-// 校验 GitHub Webhook 签名（严格按官方文档）
+/** 校验 GitHub Webhook 签名
+ * @param secret 签名密钥
+ * @param rawBody 原始请求体
+ * @param signature 签名
+ * @returns 是否通过签名校验
+ */
 function verifySignature(secret: string, rawBody: string, signature256: string | undefined): boolean {
     if (!secret || !signature256) return false;
     if (!signature256.startsWith('sha256=')) return false;
@@ -274,11 +274,9 @@ router.post('/github/webhook', async ctx => {
             return;
         }
     }
-    const signature = signPayload(rawBody);
     const wsMsg = {
         event: event,
-        rawBody: rawBody,
-        signature: signature
+        rawBody: rawBody
     };
     // 广播给所有已连接客户端
     for (const ws of clients) {

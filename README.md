@@ -26,7 +26,7 @@ sudo systemctl enable redis
 git clone -b wss https://github.com/lemonade-lab/subscribe-code.git ./subscribe-code-wss
 cd subscribe-code-wss
 yarn install
-yarn dev # 启动中转服务
+yarn dev # 启动中转服务，首次将自动生成配置文件alemomn.config.yaml
 ```
 
 - 修改中转服务配置文件`alemomn.config.yaml`：
@@ -37,6 +37,12 @@ alemonjs-code-wss:
     ws_server_port: 18555 # 中转服务端口，需与客户端配置文件url的端口一致
     github_secret: xxxxx # 将自动生成并保存到配置文件，与Github Webhook配置时填写的一致
     webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
+```
+
+Ctrl+C 退出服务，再次启动：
+
+```sh
+yarn dev
 ```
 
 2. 配置本地客户端配置文件`alemomn.config.yaml`：
