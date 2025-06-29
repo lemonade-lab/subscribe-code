@@ -109,6 +109,7 @@ yarn dev --login onebot
 alemonjs-code:
     github_secret: xxxxx # 将自动生成并保存到配置文件，与Github Webhook配置时填写的一致
     webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
+    ws_secret: '' # 密钥（选填）
 ```
 
 - 启动服务器和机器人
@@ -134,7 +135,7 @@ yarn dev --server
 ```yaml
 alemonjs-code:
     server_mode: websocket # 更改为 server 模式
-    ws_server_url: ws://127.0.0.1:18555 # 连接地址
+    ws_server_url: ws://127.0.0.1:18666 # 连接地址 （端口要和服务上的一致）
 ```
 
 ```sh

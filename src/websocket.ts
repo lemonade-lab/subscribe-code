@@ -22,11 +22,10 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
         ws = new WebSocket(WS_SERVER_URL!);
 
         ws.on('open', () => {
-            console.log(
-                chalk.bgBlue.white('[WebSocket Client]'),
-                chalk.blue('已连接到中转服务:'),
-                chalk.bold(WS_SERVER_URL)
-            );
+            logger.info({
+                message: '[WebSocket Client] 连接成功'
+            });
+
             heartbeat();
         });
 
@@ -36,7 +35,7 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
 
                 // 处理 challenge 消息
                 if (msg.type === 'challenge' && msg.challenge) {
-                    console.log(
+                    logger.info(
                         chalk.bgCyan.black('[WebSocket Client]'),
                         chalk.cyan('收到 challenge，准备发送认证信息...')
                     );

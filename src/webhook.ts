@@ -3,25 +3,29 @@ import { sendMessage } from '@src/models/github.push.api';
 import { genSubId, getSubscriptionsByRepo } from '@src/models/github.sub.data';
 import { isPaused, isPausedById } from '@src/models/github.sub.status';
 import chalk from 'chalk';
-import crypto from 'crypto';
 import Koa from 'koa';
 import Router from 'koa-router';
-import getRawBody from 'raw-body';
-import { WebSocketServer } from 'ws';
 import koaBody from 'koa-bodyparser';
 import cors from '@koa/cors';
+import WebSocket, { WebSocketServer } from 'ws';
+import getRawBody from 'raw-body';
+import crypto, { randomUUID } from 'crypto';
+import url from 'url';
 
 /**
  * @param PORT
  */
-export const createWebhookServer = async (options: { port?: number; githubSecret?: string }) => {
-    const { port: PORT = 18666, githubSecret: GITHUB_SECRET } = options;
+export const createWebhookServer = async (options: { port?: number; githubSecret?: string; wsSecret?: string }) => {
+    const { port: PORT = 18666, githubSecret: GITHUB_SECRET, wsSecret: WS_SECRET } = options;
     const app = new Koa();
     const router = new Router();
     // 跨域
     app.use(cors());
     // body
     app.use(koaBody());
+
+    // 维护所有已连接的客户端
+    const clients = new Set<WebSocket>();
 
     /** 校验 GitHub Webhook 签名
      * @param secret 签名密钥
@@ -184,9 +188,97 @@ export const createWebhookServer = async (options: { port?: number; githubSecret
     // 创建 WebSocketServer 并监听同一个端口
     const wss = new WebSocketServer({ server: server });
 
-    /**
-     * 也顺带创建 ws 服务器。
-     * 如果发现有 WebSocket 连接，
-     * 则把 GitHub Webhook 的消息也转发到 WebSocket 客户端。
-     */
+    server.on('upgrade', (req, socket, head) => {
+        const pathname = url.parse(req.url || '').pathname;
+        // 限制？
+        if (pathname === '/ws-client') {
+            wss.handleUpgrade(req, socket, head, ws => {
+                wss.emit('connection', ws, req);
+            });
+        } else {
+            socket.destroy();
+        }
+    });
+
+    wss.on('connection', ws => {
+        const challenge = randomUUID();
+        ws.send(JSON.stringify({ type: 'challenge', challenge }));
+        console.log(chalk.bgCyan.black('[WebSocket]'), chalk.cyan('已下发 challenge 给新客户端，等待认证...'));
+
+        let authed = false;
+        let clientId: string | undefined = undefined;
+        let timeout: NodeJS.Timeout;
+
+        const curWs = ws as WebSocket & { clientId?: string };
+
+        const getExpected = () => {
+            return crypto.createHmac('sha256', WS_SECRET).update(challenge).digest('hex');
+        };
+
+        curWs.on('message', msg => {
+            try {
+                const data = JSON.parse(msg.toString());
+                if (!authed) {
+                    if (data.type === 'auth' && typeof data.signature === 'string') {
+                        const expected = getExpected();
+                        if (data.signature === expected) {
+                            authed = true;
+                            clientId = randomUUID();
+                            curWs.clientId = clientId;
+                            clients.add(curWs);
+                            curWs.send(JSON.stringify({ type: 'clientId', clientId }));
+                            console.log(
+                                chalk.bgGreen.black('[WebSocket]'),
+                                chalk.green(`认证通过，分配客户端Id: ${clientId}，当前连接数:`),
+                                clients.size
+                            );
+                            // 认证通过后再输出“新客户端已连接”日志
+                            console.log(
+                                chalk.bgGreen.black('[WebSocket]'),
+                                chalk.green(`新客户端已连接: ${clientId}，当前连接数:`),
+                                clients.size
+                            );
+                        } else {
+                            curWs.send(JSON.stringify({ type: 'error', message: 'ws_secret 签名校验失败' }));
+                            curWs.close();
+                            console.log(
+                                chalk.bgRed.white('[WebSocket]'),
+                                chalk.red(
+                                    'ws_secret 签名校验失败，已断开连接。请检查客户端 ws_secret 配置是否与服务端一致。'
+                                )
+                            );
+                        }
+                    } else {
+                        curWs.close();
+                        console.log(chalk.bgRed.white('[WebSocket]'), chalk.red('未收到有效认证消息，已断开连接。'));
+                    }
+                    return;
+                }
+                // ...后续消息处理...
+            } catch {
+                curWs.close();
+                console.log(chalk.bgRed.white('[WebSocket]'), chalk.red('认证消息解析异常，已断开连接。'));
+            }
+        });
+
+        curWs.on('close', () => {
+            clients.delete(curWs);
+            clearTimeout(timeout);
+            console.log(
+                chalk.bgRed.white('[WebSocket]'),
+                chalk.red(`客户端[${clientId ?? '未知'}]已断开连接，当前连接数:`),
+                clients.size
+            );
+        });
+
+        curWs.on('error', () => {
+            clients.delete(curWs);
+            clearTimeout(timeout);
+            console.log(
+                chalk.bgRed.white('[WebSocket]'),
+                chalk.red(`客户端[${clientId ?? '未知'}]发生错误，已断开连接，当前连接数:`),
+                clients.size
+            );
+        });
+    });
 };

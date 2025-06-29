@@ -19,7 +19,8 @@ if (serverMode === 'webhook') {
     } else {
         createWebhookServer({
             port: PORT,
-            githubSecret: GITHUB_SECRET
+            githubSecret: GITHUB_SECRET,
+            wsSecret: wsSecret
         });
     }
 } else {
