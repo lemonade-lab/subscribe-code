@@ -5,12 +5,13 @@ import { isPaused, isPausedById } from '@src/models/github.sub.status';
 import chalk from 'chalk';
 import Koa from 'koa';
 import Router from 'koa-router';
-import koaBody from 'koa-bodyparser';
+// import koaBody from 'koa-bodyparser';
 import cors from '@koa/cors';
 import WebSocket, { WebSocketServer } from 'ws';
 import getRawBody from 'raw-body';
 import crypto, { randomUUID } from 'crypto';
-import url from 'url';
+// import url from 'url';
+import { getExpected } from './utils/config';
 
 /**
  * @param PORT
@@ -22,7 +23,7 @@ export const createWebhookServer = async (options: { port?: number; githubSecret
     // 跨域
     app.use(cors());
     // body
-    app.use(koaBody());
+    // app.use(koaBody());
 
     // 维护所有已连接的客户端
     const clients = new Set<WebSocket>();
@@ -122,54 +123,69 @@ export const createWebhookServer = async (options: { port?: number; githubSecret
             console.log(chalk.bgRed.white('[GitHub Webhook]'), chalk.red('未找到仓库信息，忽略本次推送'));
             return;
         }
-        const message = formatGithubEvent(event, payload);
-        if (!message) {
-            ctx.status = 202;
-            ctx.body = { status: 'message not generated, ignored' };
-            console.log(chalk.bgGray.black('[GitHub Webhook]'), chalk.gray('事件未生成消息，已忽略'));
-            return;
-        }
-        const subs = await getSubscriptionsByRepo(repo);
-        if (!subs || subs.length === 0) {
-            ctx.status = 202; // 明确告知已接受但未处理
-            ctx.body = { status: 'no subscription', message: 'bot未有任何聊天订阅该仓库，消息未发送' };
-            console.log(
-                chalk.bgYellow.black('[GitHub Webhook]'),
-                chalk.yellow('没有订阅该仓库，消息未发送：'),
-                chalk.gray(repo)
-            );
-            return;
-        }
-        for (const sub of subs) {
-            // 相同参数生成恒定唯一订阅编号进行查询
-            const subId = genSubId(sub.chatType, sub.chatId, repo);
-            if (await isPaused(sub.chatType, sub.chatId)) {
+
+        if (process.env.ALEMONJS_CODE_MODE === 'bot') {
+            const message = formatGithubEvent(event, payload);
+            if (!message) {
+                ctx.status = 202;
+                ctx.body = { status: 'message not generated, ignored' };
+                console.log(chalk.bgGray.black('[GitHub Webhook]'), chalk.gray('事件未生成消息，已忽略'));
+                return;
+            }
+            const subs = await getSubscriptionsByRepo(repo);
+            if (!subs || subs.length === 0) {
+                ctx.status = 202; // 明确告知已接受但未处理
+                ctx.body = { status: 'no subscription', message: 'bot未有任何聊天订阅该仓库，消息未发送' };
                 console.log(
                     chalk.bgYellow.black('[GitHub Webhook]'),
-                    chalk.yellow('该聊天的推送已暂停，跳过发送：'),
-                    `[${sub.chatType}] [${sub.chatId}]`,
+                    chalk.yellow('没有订阅该仓库，消息未发送：'),
                     chalk.gray(repo)
                 );
-                continue;
+                return;
             }
-            if (await isPausedById(subId)) {
+            for (const sub of subs) {
+                // 相同参数生成恒定唯一订阅编号进行查询
+                const subId = genSubId(sub.chatType, sub.chatId, repo);
+                if (await isPaused(sub.chatType, sub.chatId)) {
+                    console.log(
+                        chalk.bgYellow.black('[GitHub Webhook]'),
+                        chalk.yellow('该聊天的推送已暂停，跳过发送：'),
+                        `[${sub.chatType}] [${sub.chatId}]`,
+                        chalk.gray(repo)
+                    );
+                    continue;
+                }
+                if (await isPausedById(subId)) {
+                    console.log(
+                        chalk.bgYellow.black('[GitHub Webhook]'),
+                        chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
+                        `[${sub.chatType}] [${sub.chatId}] [${subId}]`,
+                        chalk.gray(repo)
+                    );
+                    continue;
+                }
                 console.log(
-                    chalk.bgYellow.black('[GitHub Webhook]'),
-                    chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
-                    `[${sub.chatType}] [${sub.chatId}] [${subId}]`,
-                    chalk.gray(repo)
+                    chalk.bgGreen.black('[GitHub Webhook]'),
+                    chalk.green('发送消息:'),
+                    chalk.bold(message),
+                    chalk.green('from repo:'),
+                    chalk.bold(repo)
                 );
-                continue;
+                await sendMessage(sub.chatType, sub.chatId, message);
             }
-            console.log(
-                chalk.bgGreen.black('[GitHub Webhook]'),
-                chalk.green('发送消息:'),
-                chalk.bold(message),
-                chalk.green('from repo:'),
-                chalk.bold(repo)
-            );
-            await sendMessage(sub.chatType, sub.chatId, message);
+        } else {
+            // 广播给所有已连接客户端
+            const wsMsg = {
+                event: event,
+                rawBody: rawBody
+            };
+            for (const ws of clients) {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify(wsMsg));
+                }
+            }
         }
+
         ctx.body = { status: 'ok' };
     });
 
@@ -188,17 +204,17 @@ export const createWebhookServer = async (options: { port?: number; githubSecret
     // 创建 WebSocketServer 并监听同一个端口
     const wss = new WebSocketServer({ server: server });
 
-    server.on('upgrade', (req, socket, head) => {
-        const pathname = url.parse(req.url || '').pathname;
-        // 限制？
-        if (pathname === '/ws-client') {
-            wss.handleUpgrade(req, socket, head, ws => {
-                wss.emit('connection', ws, req);
-            });
-        } else {
-            socket.destroy();
-        }
-    });
+    // server.on('upgrade', (req, socket, head) => {
+    //     const pathname = url.parse(req.url || '').pathname;
+    //     // 限制？
+    //     if (pathname === '/ws-client') {
+    //         wss.handleUpgrade(req, socket, head, ws => {
+    //             wss.emit('connection', ws, req);
+    //         });
+    //     } else {
+    //         socket.destroy();
+    //     }
+    // });
 
     wss.on('connection', ws => {
         const challenge = randomUUID();
@@ -211,16 +227,12 @@ export const createWebhookServer = async (options: { port?: number; githubSecret
 
         const curWs = ws as WebSocket & { clientId?: string };
 
-        const getExpected = () => {
-            return crypto.createHmac('sha256', WS_SECRET).update(challenge).digest('hex');
-        };
-
         curWs.on('message', msg => {
             try {
                 const data = JSON.parse(msg.toString());
                 if (!authed) {
                     if (data.type === 'auth' && typeof data.signature === 'string') {
-                        const expected = getExpected();
+                        const expected = getExpected(WS_SECRET, challenge);
                         if (data.signature === expected) {
                             authed = true;
                             clientId = randomUUID();
@@ -261,9 +273,10 @@ export const createWebhookServer = async (options: { port?: number; githubSecret
             }
         });
 
-        curWs.on('close', () => {
+        curWs.on('close', err => {
             clients.delete(curWs);
             clearTimeout(timeout);
+            console.error(err);
             console.log(
                 chalk.bgRed.white('[WebSocket]'),
                 chalk.red(`客户端[${clientId ?? '未知'}]已断开连接，当前连接数:`),
@@ -271,9 +284,10 @@ export const createWebhookServer = async (options: { port?: number; githubSecret
             );
         });
 
-        curWs.on('error', () => {
+        curWs.on('error', err => {
             clients.delete(curWs);
             clearTimeout(timeout);
+            console.error(err);
             console.log(
                 chalk.bgRed.white('[WebSocket]'),
                 chalk.red(`客户端[${clientId ?? '未知'}]发生错误，已断开连接，当前连接数:`),

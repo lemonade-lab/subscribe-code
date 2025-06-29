@@ -1,5 +1,6 @@
 import { getConfigValue, getConfig } from 'alemonjs';
 import { PublicEventMessageCreate, PrivateEventMessageCreate } from 'alemonjs';
+import crypto from 'crypto';
 
 export const getCodeConfig = () => {
     const value = getConfigValue() || {};
@@ -38,3 +39,8 @@ export function isAdmin(userKey: string): boolean {
 export function isOwner(e: PublicEventMessageCreate | PrivateEventMessageCreate): boolean {
     return !!e.IsMaster;
 }
+
+export const getExpected = (WS_SECRET, challenge) => {
+    console.log(`[getExpected] challenge: ${challenge}, WS_SECRET: ${WS_SECRET}`);
+    return crypto.createHmac('sha256', WS_SECRET).update(challenge).digest('hex');
+};

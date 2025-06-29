@@ -3,8 +3,8 @@ import { sendMessage } from '@src/models/github.push.api';
 import { genSubId, getSubscriptionsByRepo } from '@src/models/github.sub.data';
 import { isPaused, isPausedById } from '@src/models/github.sub.status';
 import chalk from 'chalk';
-import crypto from 'crypto';
 import WebSocket from 'ws';
+import { getExpected } from './utils/config';
 
 /**
  * @param options
@@ -39,7 +39,9 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
                         chalk.bgCyan.black('[WebSocket Client]'),
                         chalk.cyan('收到 challenge，准备发送认证信息...')
                     );
-                    const signature = crypto.createHmac('sha256', WS_SECRET).update(msg.challenge).digest('hex');
+
+                    const signature = getExpected(WS_SECRET, msg.challenge);
+
                     ws.send(JSON.stringify({ type: 'auth', signature }));
                     return;
                 }
@@ -130,7 +132,8 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
             }
         });
 
-        ws.on('close', () => {
+        ws.on('close', err => {
+            console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接已关闭，错误信息:'), err);
             console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接已关闭，5秒后重连...'));
             clearHeartbeat();
             reconnect();
