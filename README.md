@@ -134,7 +134,6 @@ yarn dev --server
 
 ```yaml
 alemonjs-code:
-    server_mode: websocket # 更改为 server 模式
     ws_server_url: ws://127.0.0.1:18666 # 连接地址 （端口要和服务上的一致）
 ```
 
