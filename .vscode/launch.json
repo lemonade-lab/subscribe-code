@@ -10,14 +10,6 @@
             "skipFiles": ["<node_internals>/**"]
         },
         {
-            "name": "qq-bot",
-            "type": "node",
-            "request": "launch",
-            "runtimeArgs": ["dev", "--login", "qq-bot"],
-            "runtimeExecutable": "yarn",
-            "skipFiles": ["<node_internals>/**"]
-        },
-        {
             "name": "jsxp",
             "type": "node",
             "request": "launch",

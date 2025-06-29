@@ -47,36 +47,25 @@ sudo systemctl enable redis
 
 文档： [https://alemonjs.com/](https://alemonjs.com/)
 
-Bot本体根目录新建文件`alemomn.config.yaml`：
-
-```yaml
-alemonjs-code:
-    # 配置Github Webhook Secret
-    github_secret: '' # Github Webhook Secret，第一次启动将自动生成并保存到配置文件，也可手动自定义为任意字符串
-    server_mode: webhook # 运行模式，本地接收github webhook推送模式需配置Github Webhook，中转wsClient模式看下文
-```
-
-- OneBot
+根目录新建文件`alemomn.config.yaml`：
 
 ```yaml
 onebot:
     url: '' # 正向url
     token: '' # access_token
-    # 启用反向ws连接作为服务端
-    reverse_enable: false # 启用后正向连接配置失效，启用地址：ws://127.0.0.1:17158
-    reverse_port: 17158 # 返向连接服务端口，启用反向连接后生效
     master_key: null # 主人id, 消息显示的的UserKey
+alemonjs-code:
+    # 配置Github Webhook Secret
+    github_secret: '' # Github Webhook Secret，第一次启动将自动生成并保存到配置文件，也可手动自定义为任意字符串
 ```
 
-```sh
-yarn dev --login onebot # 启动OneBot开发机器人
-```
+> redis 使用默认配置，若修改，请阅读文档
 
 - 运行
 
 ```sh
 # 启动机器人
-yarn dev --login onebot # 启动OneBot机器人
+yarn dev --login onebot
 ```
 
 ## 三、🎒订阅githu仓库
@@ -104,40 +93,48 @@ yarn dev --login onebot # 启动OneBot机器人
 | 添加仓库订阅管理员     | 添加某个群聊成员为Github仓库订阅管理员，权限owner，userKey可通过后台成员消息日志查看                     | `!新增仓库订阅管理员 @user` 或 `!新增仓库订阅管理员 userKey` |
 | 删除仓库订阅管理员     | 从管理员列表删除某个仓库订阅管理员，权限owner，userKey可通过后台成员消息日志查看                         | `!删除仓库订阅管理员 @user` 或 `!删除仓库订阅管理员 userKey` |
 
-## 四、🎈中转推送
+## 四、🎈连接说明
 
-1. 部署中转服务，Github Webhook的推送数据到部署于公网的中转服务，中转服务再通过ws链接转发到本地推送客户端。
+提供了2种方式订阅github仓库
 
-```sh
-git clone -b wss https://github.com/lemonade-lab/subscribe-code.git ./subscribe-code-wss
-cd subscribe-code-wss
-yarn install
-yarn dev # 启动中转服务，首次将自动生成配置文件alemomn.config.yaml
-```
+### 1. webhook
 
-- 修改中转服务配置文件`alemomn.config.yaml`：
+直接在具有公网IP的服务器上，接收来自github webhook消息。
+
+> 这是机器人的默认模式。
+
+- 配置文件`alemomn.config.yaml`：
 
 ```yaml
-alemonjs-code-wss:
-    ws_secret: xxxxx # 中转服务自动生成的ws_secret，需与客户端配置文件一致
-    ws_server_port: 18555 # 中转服务端口，需与客户端配置文件url的端口一致
+alemonjs-code:
     github_secret: xxxxx # 将自动生成并保存到配置文件，与Github Webhook配置时填写的一致
     webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
 ```
 
-Ctrl+C 退出服务，再次启动：
+- 启动服务器和机器人
 
 ```sh
-yarn dev
+yarn dev --login onebot
 ```
 
-2. 配置本地客户端配置文件`alemomn.config.yaml`：
+- 仅启服务器，不启机器人
+
+用来当作webscoket的服务器时
+
+```sh
+yarn dev --server
+```
+
+### 2. websocket
+
+使用ws协议，连接公网IP的服务器，让不具备公网IP的设备具有消息接收能力。
+
+- 配置文件`alemomn.config.yaml`：
 
 ```yaml
 alemonjs-code:
-    server_mode: wsClient
-    ws_secret: xxxxxx # 复制中转服务配置文件的ws_secret，需与中转服务配置文件一致
-    ws_server_url: ws://127.0.0.1:18555/ws-client # 中转服务地址，替换为实际中转服务（内网/公网）地址
+    server_mode: websocket # 更改为 server 模式
+    ws_server_url: ws://127.0.0.1:18555 # 连接地址
 ```
 
 ```sh

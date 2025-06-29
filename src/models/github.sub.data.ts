@@ -1,8 +1,6 @@
 import crypto from 'crypto';
 import { getIoRedis } from '@alemonjs/db';
 
-const ioRedis = getIoRedis();
-
 export interface Subscription {
     chatType: string;
     chatId: string;
@@ -16,6 +14,7 @@ const REDIS_KEY = 'alemonjs:githubBot:subsData';
  * @throws 如果数据解析失败，则返回空数组
  */
 async function loadSubscriptions(): Promise<Subscription[]> {
+    const ioRedis = getIoRedis();
     const data = await ioRedis.get(REDIS_KEY);
     if (!data) return [];
     try {
@@ -39,6 +38,7 @@ export function genSubId(chatType: string, chatId: string, repoUrl: string): str
 
 // 异步保存所有订阅
 async function saveSubscriptions(subs: Subscription[]) {
+    const ioRedis = getIoRedis();
     await ioRedis.set(REDIS_KEY, JSON.stringify(subs));
 }
 

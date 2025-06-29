@@ -8,11 +8,14 @@ import {
 import { removePauseById } from '@src/models/github.sub.status';
 import { isAdmin, isOwner } from '@src/utils/config';
 import { Text, useMessage } from 'alemonjs';
+
+import { Regular } from 'alemonjs/utils';
+
 const removeByUrlReg =
     /^(!|！|\/)?(移除|取消|删除|del|DEL|delete|DELETE)(仓库|github仓库|GitHub仓库|GitHub代码仓库)?\s*(https?:\/\/)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
 const removeByIdReg = /^(!|！|\/)?(移除|取消|删除|del|DEL|delete|DELETE)编号仓库\s*([a-z0-9]{8})$/i;
 
-export const regular = new RegExp(`${removeByUrlReg.source}|${removeByIdReg.source}`);
+export const regular = Regular.or(removeByUrlReg, removeByIdReg);
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);

@@ -6,7 +6,7 @@ import moment from 'moment';
  * @param payload - 事件的负载数据
  * @returns 格式化后的消息字符串或 null
  */
-export function formatGithubEvent(event: string, payload: any): string | null {
+export function formatGithubEvent(event: string, payload): string | null {
     switch (event) {
         case 'push': {
             const repo = payload.repository?.full_name;
@@ -18,7 +18,7 @@ export function formatGithubEvent(event: string, payload: any): string | null {
             const headCommit = payload.head_commit || {};
             const time = headCommit.timestamp ? moment(headCommit.timestamp).format('YYYY年MM月DD日 HH:mm:ss') : '';
 
-            let message = [
+            const message = [
                 `📦 仓库：${repo}`,
                 `🌿 分支：${branch}`,
                 `--------------------`,
@@ -30,7 +30,7 @@ export function formatGithubEvent(event: string, payload: any): string | null {
             ];
 
             // 展示前5条提交
-            commits.slice(0, 5).forEach((commit: any, idx: number) => {
+            commits.slice(0, 5).forEach((commit, idx: number) => {
                 message.push(
                     `#${idx + 1} ✏️ ${commit.message.split('\n')[0]}`,
                     `👤 作者：${commit.author?.name}`,
@@ -75,7 +75,7 @@ export function formatGithubEvent(event: string, payload: any): string | null {
                 ].join('\n');
             }
             break;
-        case 'issue_comment':
+        case 'issue_comment': {
             // 评论内容截断
             const commentBody = payload.comment.body || '';
             const maxLen = 500;
@@ -90,6 +90,7 @@ export function formatGithubEvent(event: string, payload: any): string | null {
                 `📝 内容：${shortBody}`,
                 `🔗 链接：${payload.comment.html_url}`
             ].join('\n');
+        }
         case 'pull_request':
             if (payload.action === 'opened') {
                 return [

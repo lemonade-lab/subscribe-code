@@ -4,10 +4,12 @@ import { selects } from '@src/apps/index';
 import { isAdmin, isOwner } from '@src/utils/config';
 import { listAllSubscriptionsByType } from '@src/models/github.sub.data';
 
+import { Regular } from 'alemonjs/utils';
+
 const startAllReg = /^(!|！|\/)?(开启|启动|打开)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)推送$/;
 const startByIdReg = /^(!|！|\/)?(开启|启动|打开)编号仓库\s*([a-z0-9]{8})$/i;
 
-export const regular = new RegExp(`${startAllReg.source}|${startByIdReg.source}`);
+export const regular = Regular.or(startAllReg, startByIdReg);
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);

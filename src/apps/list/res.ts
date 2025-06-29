@@ -3,13 +3,14 @@ import { listAllSubscriptionsByType, listSubscriptions } from '@src/models/githu
 import { isPaused, isPausedById } from '@src/models/github.sub.status';
 import { isAdmin, isOwner } from '@src/utils/config';
 import { Text, useMessage } from 'alemonjs';
+import { Regular } from 'alemonjs/utils';
 
 const listReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)列表$/;
 const listAllReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)全部列表$/;
 const checkRepoReg =
     /^(!|！|\/)?检查(仓库|github仓库|GitHub仓库|GitHub代码仓库)\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
 
-export const regular = new RegExp(`${listReg.source}|${listAllReg.source}|${checkRepoReg.source}`);
+export const regular = Regular.or(listReg, listAllReg, checkRepoReg);
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
@@ -31,7 +32,7 @@ export default onResponse(selects, async e => {
             const pausedAll = await isPaused(chatType, chatId);
             const chatStatus = pausedAll ? '⚠' : '✅';
 
-            let lines: string[] = [];
+            const lines: string[] = [];
             for (const sub of subs) {
                 const paused = pausedAll ? '⚠' : (await isPausedById(sub.id)) ? '⚠' : '✅';
                 lines.push(`${paused} ${sub.id}：${sub.repo}`);
@@ -53,7 +54,7 @@ export default onResponse(selects, async e => {
             const pausedAll = await isPaused(chatType, chatId);
             const chatStatus = pausedAll ? '⚠' : '✅';
 
-            let lines: string[] = [];
+            const lines: string[] = [];
             for (const sub of subs) {
                 const paused = pausedAll ? '⚠' : (await isPausedById(sub.id)) ? '⚠' : '✅';
                 lines.push(`${paused} ${sub.id}：${sub.repo}`);
@@ -73,7 +74,7 @@ export default onResponse(selects, async e => {
             return;
         }
         if ((e.name === 'message.create' || e.name === 'private.message.create') && e.MessageId) {
-            let msgs = [`订阅的全部GitHub仓库列表：\n`];
+            const msgs = [`订阅的全部GitHub仓库列表：\n`];
             console.log('执行查看全部仓库订阅');
             const groupSubs = await listAllSubscriptionsByType('message.create');
             if (groupSubs.length !== 0) {
