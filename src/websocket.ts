@@ -7,25 +7,33 @@ import WebSocket from 'ws';
 import { getExpected } from './utils/config';
 
 /**
- * @param options
+ * 连接 WebSocket 服务器（中转模式，ws_secret 可选）
+ * @param options.wsServerUrl WebSocket服务器地址
+ * @param options.wsSecret    认证密钥（可选，建议生产环境设置）
  */
 export const connectWebsokcetServer = async (options: { wsServerUrl?: string; wsSecret?: string }) => {
     const { wsServerUrl: WS_SERVER_URL, wsSecret: WS_SECRET } = options;
 
-    // WebSocket 客户端
     let ws: WebSocket | null = null;
     let heartbeatTimer: NodeJS.Timeout | null = null;
     let reconnectTimer: NodeJS.Timeout | null = null;
     let clientId: string | null = null;
 
     function connectWS() {
-        ws = new WebSocket(WS_SERVER_URL!);
+        if (!WS_SERVER_URL) {
+            logger.error('[WebSocket Client] wsServerUrl 未配置，无法连接');
+            return;
+        }
+        ws = new WebSocket(WS_SERVER_URL);
+
+        logger.info(
+            chalk.bgYellow.black('[webSocket Client]'),
+            chalk.yellow('客户端已启动:'),
+            chalk.bold(`${WS_SERVER_URL}`)
+        );
 
         ws.on('open', () => {
-            logger.info({
-                message: '[WebSocket Client] 连接成功'
-            });
-
+            logger.info('[WebSocket Client] 连接成功', { url: WS_SERVER_URL });
             heartbeat();
         });
 
@@ -33,22 +41,29 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
             try {
                 const msg = JSON.parse(data.toString());
 
-                // 处理 challenge 消息
+                // 认证流程：服务端配置了 wsSecret 并下发非空challenge，客户端需同步配置 WS_SECRET 进行认证
                 if (msg.type === 'challenge' && msg.challenge) {
-                    logger.info(
-                        chalk.bgCyan.black('[WebSocket Client]'),
-                        chalk.cyan('收到 challenge，准备发送认证信息...')
-                    );
-
-                    const signature = getExpected(WS_SECRET, msg.challenge);
-
-                    ws.send(JSON.stringify({ type: 'auth', signature }));
+                    if (WS_SECRET) {
+                        logger.info(
+                            chalk.bgCyan.black('[WebSocket Client]'),
+                            chalk.cyan('收到 challenge，准备发送认证信息...')
+                        );
+                        const signature = getExpected(WS_SECRET, msg.challenge);
+                        ws.send(JSON.stringify({ type: 'auth', signature }));
+                    } else {
+                        logger.warn(
+                            chalk.bgYellow.black('[WebSocket Client]'),
+                            chalk.yellow('收到 challenge，但未配置 ws_secret，跳过认证流程')
+                        );
+                        // 直接发送空认证或忽略
+                        ws.send(JSON.stringify({ type: 'auth', signature: '' }));
+                    }
                     return;
                 }
 
-                // 处理 error 消息
+                // 认证失败
                 if (msg.type === 'error' && msg.message) {
-                    console.log(
+                    logger.error(
                         chalk.bgRed.white('[WebSocket Client]'),
                         chalk.red('认证失败:'),
                         chalk.yellow(msg.message),
@@ -58,10 +73,10 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
                     return;
                 }
 
-                // 处理 clientId 分配（认证成功）
+                // 认证成功，分配 clientId
                 if (msg.type === 'clientId' && msg.clientId) {
                     clientId = msg.clientId;
-                    console.log(
+                    logger.info(
                         chalk.bgGreen.black('[WebSocket Client]'),
                         chalk.green('认证通过，分配到客户端Id:'),
                         chalk.bold(clientId)
@@ -69,29 +84,28 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
                     return;
                 }
 
-                // 只对业务推送消息做签名校验
+                // 业务推送消息
                 const { event, rawBody } = msg;
                 if (!event || !rawBody) {
                     // 非业务消息，忽略
                     return;
                 }
 
-                console.log(chalk.bgGreen.black('[WebSocket Client]'), chalk.green('收到消息:'), chalk.bold(event));
+                logger.info(chalk.bgGreen.black('[WebSocket Client]'), chalk.green('收到消息:'), chalk.bold(event));
                 const payload = JSON.parse(rawBody);
-                // 兼容原有处理逻辑
                 const repo = payload.repository?.full_name;
                 if (!repo) {
-                    console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('未找到仓库信息，忽略本次推送'));
+                    logger.warn(chalk.bgRed.white('[WebSocket Client]'), chalk.red('未找到仓库信息，忽略本次推送'));
                     return;
                 }
                 const message = formatGithubEvent(event, payload);
                 if (!message) {
-                    console.log(chalk.bgGray.black('[WebSocket Client]'), chalk.gray('事件未生成消息，已忽略'));
+                    logger.info(chalk.bgGray.black('[WebSocket Client]'), chalk.gray('事件未生成消息，已忽略'));
                     return;
                 }
                 const subs = await getSubscriptionsByRepo(repo);
                 if (!subs || subs.length === 0) {
-                    console.log(
+                    logger.info(
                         chalk.bgYellow.black('[WebSocket Client]'),
                         chalk.yellow('没有订阅该仓库，消息未发送：'),
                         chalk.gray(repo)
@@ -101,7 +115,7 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
                 for (const sub of subs) {
                     const subId = genSubId(sub.chatType, sub.chatId, repo);
                     if (await isPaused(sub.chatType, sub.chatId)) {
-                        console.log(
+                        logger.info(
                             chalk.bgYellow.black('[WebSocket Client]'),
                             chalk.yellow('该聊天的推送已暂停，跳过发送：'),
                             `[${sub.chatType}] [${sub.chatId}]`,
@@ -110,7 +124,7 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
                         continue;
                     }
                     if (await isPausedById(subId)) {
-                        console.log(
+                        logger.info(
                             chalk.bgYellow.black('[WebSocket Client]'),
                             chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
                             `[${sub.chatType}] [${sub.chatId}] [${subId}]`,
@@ -118,7 +132,7 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
                         );
                         continue;
                     }
-                    console.log(
+                    logger.info(
                         chalk.bgGreen.black('[WebSocket Client]'),
                         chalk.green('发送消息:'),
                         chalk.bold(message),
@@ -128,33 +142,34 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
                     await sendMessage(sub.chatType, sub.chatId, message);
                 }
             } catch (e) {
-                console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('消息处理异常:'), e);
+                logger.error(chalk.bgRed.white('[WebSocket Client]'), chalk.red('消息处理异常:'), e);
             }
         });
 
         ws.on('close', err => {
-            console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接已关闭，错误信息:'), err);
-            console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接已关闭，5秒后重连...'));
+            logger.warn(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接已关闭，错误信息:'), err);
+            logger.info(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接已关闭，5秒后重连...'));
             clearHeartbeat();
             reconnect();
         });
 
         ws.on('error', err => {
-            console.log(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接异常:'), err);
+            logger.error(chalk.bgRed.white('[WebSocket Client]'), chalk.red('连接异常:'), err);
             ws?.close();
         });
 
         ws.on('pong', () => {
-            console.log(chalk.bgCyan.black('[WebSocket Client]'), chalk.cyan('收到webhook中转服务器心跳反馈'));
+            logger.debug(chalk.bgCyan.black('[WebSocket Client]'), chalk.cyan('收到webhook中转服务器心跳反馈'));
             heartbeat();
         });
     }
 
+    // 发送心跳包，保持连接
     function heartbeat() {
         clearHeartbeat();
         heartbeatTimer = setTimeout(() => {
             ws?.ping();
-            console.log(chalk.bgCyan.black('[WebSocket Client]'), chalk.cyan('已发送心跳到webhook中转服务器'));
+            logger.debug(chalk.bgCyan.black('[WebSocket Client]'), chalk.cyan('已发送心跳到webhook中转服务器'));
             heartbeat();
         }, 25000);
     }
@@ -163,6 +178,7 @@ export const connectWebsokcetServer = async (options: { wsServerUrl?: string; ws
         if (heartbeatTimer) clearTimeout(heartbeatTimer);
     }
 
+    // 断线重连
     function reconnect() {
         if (reconnectTimer) clearTimeout(reconnectTimer);
         reconnectTimer = setTimeout(() => {
