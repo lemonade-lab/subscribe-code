@@ -56,7 +56,7 @@ onebot:
     master_key: null # 主人id, 消息显示的的UserKey
 alemonjs-code:
     # 配置Github Webhook Secret
-    github_secret: '' # Github Webhook Secret，第一次启动将自动生成并保存到配置文件，也可手动自定义为任意字符串
+    github_secret: '' # Github Webhook Secret，需与Github Webhook配置时填写的一致
 ```
 
 > redis 使用默认配置，若修改，请阅读文档
@@ -107,7 +107,7 @@ yarn dev --login onebot
 
 ```yaml
 alemonjs-code:
-    github_secret: xxxxx # 将自动生成并保存到配置文件，与Github Webhook配置时填写的一致
+    github_secret: xxxxx # 需Github Webhook配置时填写的一致
     webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
     ws_secret: '' # 密钥（选填）
 ```
@@ -134,6 +134,7 @@ yarn dev --server
 
 ```yaml
 alemonjs-code:
+    # 该配置为非空时，将启动ws连接使用中转模式
     ws_server_url: ws://127.0.0.1:18666 # 连接地址 （端口要和服务上的一致）
 ```
 
