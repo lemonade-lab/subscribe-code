@@ -1,0 +1,28 @@
+services:
+    redis:
+        image: redis:7-alpine
+        container_name: redis
+        restart: unless-stopped
+        ports:
+            - '6379:6379'
+        volumes:
+            - redis_data:/data
+        command: redis-server --appendonly yes
+
+    alemonjs-code:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: alemonjs-code
+        restart: unless-stopped
+        ports:
+            - '18666:18666'
+        volumes:
+            - ./alemon.config.yaml:/app/alemon.config.yaml
+            - ./logs:/app/logs
+        depends_on:
+            - redis
+        command: ['npm', 'run', 'app']
+
+volumes:
+    redis_data:
