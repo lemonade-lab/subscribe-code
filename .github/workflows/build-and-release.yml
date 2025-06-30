@@ -35,7 +35,6 @@ jobs:
 
             - name: 安装依赖项
               run: |
-                  npm install yarn@1.19.1 -g
                   yarn install --ignore-engines
 
             - name: 打包
@@ -46,6 +45,8 @@ jobs:
                   cp -rf ./.puppeteerrc.cjs dist/.puppeteerrc.cjs
                   cp -rf ./package.json dist/package.json
                   cp -rf ./README.md dist/README.md
+                  cp -rf ./.npmc dist/.npmc
+                  cp -rf ./index.js dist/index.js
                   # 检查 dist 目录是否存在且不为空
                   if [[ ! -d dist || -z $(ls -A dist) ]]; then
                     echo "错误: 'dist' 目录不存在或为空，构建步骤可能失败。"
