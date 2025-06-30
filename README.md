@@ -18,6 +18,17 @@ sudo systemctl start redis
 sudo systemctl enable redis
 ```
 
+## 拉取仓库
+
+```sh
+git clone https://github.com/lemonade-lab/subscribe-code.git
+```
+
+```sh
+# release 版
+git clone -b release https://github.com/lemonade-lab/subscribe-code.git
+```
+
 ## 一、🍄配置Github Webhook
 
 > [!IMPORTANT]
@@ -66,6 +77,8 @@ alemonjs-code:
 ```sh
 # 启动机器人
 yarn dev --login onebot
+# release 版
+yarn app --login onebot
 ```
 
 ## 三、🎒订阅githu仓库
@@ -116,6 +129,8 @@ alemonjs-code:
 
 ```sh
 yarn dev --login onebot
+# release 版
+yarn app --login onebot
 ```
 
 - 仅启服务器，不启机器人
@@ -124,6 +139,8 @@ yarn dev --login onebot
 
 ```sh
 yarn dev --server
+# release 版
+yarn server
 ```
 
 ### 2. websocket
@@ -140,6 +157,8 @@ alemonjs-code:
 
 ```sh
 yarn dev --login onebot # 启动OneBot机器人
+# release 版
+yarn app --login onebot
 ```
 
 ## 开发
@@ -148,10 +167,6 @@ yarn dev --login onebot # 启动OneBot机器人
 
 使用文档 [https://alemonjs.com/](https://alemonjs.com/)
 
-### 开发指南
+- 代码贡献指南
 
 [README_DEV](./README_DEV.md)
-
-```sh
-yarn dev --login gui # 启动vscode gui开发机器人
-```
