@@ -47,12 +47,6 @@ jobs:
                   cp -rf ./README.md dist/README.md
                   cp -rf ./.npmrc dist/.npmrc
                   cp -rf ./index.js dist/index.js
-                  # 检查 dist 目录是否存在且不为空
-                  if [[ ! -d dist || -z $(ls -A dist) ]]; then
-                    echo "错误: 'dist' 目录不存在或为空，构建步骤可能失败。"
-                    exit 1
-                  fi
-                  # 转移产物
                   mv dist ../dist
 
             - name: 推送 release
@@ -65,10 +59,6 @@ jobs:
                   else
                     git checkout $DEPLOY_BRANCH
                   fi
-
-                  # 删除依赖
-                  rm -rf node_modules
-                  rm -rf .gitignore
 
                   # 清理非 git 文件夹的其他内容
                   find . -mindepth 1 ! -path './.git*' -exec rm -rf {} + || {

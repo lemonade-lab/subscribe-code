@@ -1,7 +1,7 @@
 {
-    "name": "alemonjs-github",
-    "version": "0.0.3",
-    "description": "github动态订阅",
+    "name": "alemonjs-code",
+    "version": "0.0.4",
+    "description": "仓库动态订阅",
     "author": "snowtafir, ningmengchongshui",
     "type": "module",
     "private": true,
@@ -23,13 +23,8 @@
         "prepare": "husky"
     },
     "dependencies": {
-        "axios": "^1.7.9",
-        "bullmq": "^4.12.7",
         "chalk": "^5.4.1",
         "classnames": "^2.5.1",
-        "dayjs": "^1.11.13",
-        "dotenv": "^16.4.5",
-        "js-yaml": "^4.1.0",
         "jsxp": "1.2.2",
         "koa": "^3.0.0",
         "koa-router": "^13.0.1",
@@ -46,7 +41,6 @@
         "@types/koa": "^2.15.0",
         "@types/koa-bodyparser": "^4.3.12",
         "@types/koa-router": "^7.4.8",
-        "@types/uuid": "^10.0.0",
         "@types/ws": "8.18.1",
         "alemonjs": "^2.1.0-alpha.17",
         "cssnano": "^7.0.6",
@@ -57,12 +51,10 @@
         "eslint-plugin-unused-imports": "^4.1.4",
         "globals": "^15.12.0",
         "husky": "^9.1.7",
-        "less": "^4.2.1",
         "lvyjs": "^0.2.20",
         "prettier": "^3.5.3",
         "sass": "^1.83.0",
         "tailwindcss": "^3",
-        "typescript-eslint": "^8.13.0",
-        "ws": "8.18.2"
+        "typescript-eslint": "^8.13.0"
     }
 }
