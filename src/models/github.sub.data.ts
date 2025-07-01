@@ -36,7 +36,7 @@ export function genSubId(chatType: string, chatId: string, repoUrl: string): str
     return crypto.createHash('md5').update(str).digest('hex').slice(0, 8);
 }
 
-// 异步保存所有订阅
+/**异步保存所有订阅 */
 async function saveSubscriptions(subs: Subscription[]) {
     const ioRedis = getIoRedis();
     await ioRedis.set(REDIS_KEY, JSON.stringify(subs));
@@ -88,7 +88,7 @@ export async function removeSubscriptionByUrl(chatType: string, chatId: string, 
         await saveSubscriptions(subs);
         return true;
     } else {
-        return false; // 没有找到对应的订阅
+        return false;
     }
 }
 
@@ -116,7 +116,6 @@ export async function removeSubscriptionById(id: string): Promise<boolean> {
             subs.splice(i, 1);
         }
     }
-
     if (found) {
         await saveSubscriptions(subs);
     }

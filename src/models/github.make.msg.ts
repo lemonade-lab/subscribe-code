@@ -6,7 +6,8 @@ import moment from 'moment';
  * @param payload - 事件的负载数据
  * @returns 格式化后的消息字符串或 null
  */
-export function formatGithubEvent(event: string, payload): string | null {
+export function formatGithubEvent(event: string, payload: any): string | null {
+    if (!payload) return null;
     switch (event) {
         case 'push': {
             const repo = payload.repository?.full_name;
@@ -30,7 +31,7 @@ export function formatGithubEvent(event: string, payload): string | null {
             ];
 
             // 展示前5条提交
-            commits.slice(0, 5).forEach((commit, idx: number) => {
+            commits.slice(0, 5).forEach((commit: any, idx: number) => {
                 message.push(
                     `#${idx + 1} ✏️ ${commit.message.split('\n')[0]}`,
                     `👤 作者：${commit.author?.name}`,
@@ -48,82 +49,80 @@ export function formatGithubEvent(event: string, payload): string | null {
         }
         case 'issues':
             if (payload.action === 'opened') {
-                // 评论内容截断
                 const commentBody = payload.body || '';
                 const maxLen = 500;
                 const shortBody = commentBody.length > maxLen ? commentBody.slice(0, maxLen) + '...' : commentBody;
                 return [
-                    `📦 仓库：${payload.repository.full_name}`,
+                    `📦 仓库：${payload.repository?.full_name}`,
                     `--------------------`,
                     `🆕 新建 Issue`,
-                    `#${payload.issue.number} ${payload.issue.title}`,
+                    `#${payload.issue?.number} ${payload.issue?.title}`,
                     `正文：`,
                     `${shortBody}`,
                     `--------------------`,
-                    `👤 作者：${payload.issue.user?.login}`,
-                    `🔗 链接：${payload.issue.html_url}`
+                    `👤 作者：${payload.issue?.user?.login}`,
+                    `🔗 链接：${payload.issue?.html_url}`
                 ].join('\n');
             } else if (payload.action === 'closed') {
                 return [
-                    `📦 仓库：${payload.repository.full_name}`,
+                    `📦 仓库：${payload.repository?.full_name}`,
                     `--------------------`,
                     `✅ 关闭 Issue`,
-                    `#${payload.issue.number} ${payload.issue.title}`,
+                    `#${payload.issue?.number} ${payload.issue?.title}`,
                     `--------------------`,
-                    `👤 作者：${payload.issue.user?.login}`,
-                    `🔗 链接：${payload.issue.html_url}`
+                    `👤 作者：${payload.issue?.user?.login}`,
+                    `🔗 链接：${payload.issue?.html_url}`
                 ].join('\n');
             }
             break;
         case 'issue_comment': {
-            // 评论内容截断
-            const commentBody = payload.comment.body || '';
+            const commentBody = payload.comment?.body || '';
             const maxLen = 500;
             const shortBody = commentBody.length > maxLen ? commentBody.slice(0, maxLen) + '...' : commentBody;
             return [
-                `📦 仓库：${payload.repository.full_name}`,
+                `📦 仓库：${payload.repository?.full_name}`,
                 `--------------------`,
                 `💬 Issue 评论`,
-                `#${payload.issue.number} ${payload.issue.title}`,
+                `#${payload.issue?.number} ${payload.issue?.title}`,
                 `--------------------`,
-                `👤 评论者：${payload.comment.user.login}`,
+                `👤 评论者：${payload.comment?.user?.login}`,
                 `📝 内容：${shortBody}`,
-                `🔗 链接：${payload.comment.html_url}`
+                `🔗 链接：${payload.comment?.html_url}`
             ].join('\n');
         }
         case 'pull_request':
             if (payload.action === 'opened') {
                 return [
-                    `📦 仓库：${payload.repository.full_name}`,
+                    `📦 仓库：${payload.repository?.full_name}`,
                     `--------------------`,
                     `🔀 新建 PR`,
-                    `#${payload.pull_request.number} ${payload.pull_request.title}`,
+                    `#${payload.pull_request?.number} ${payload.pull_request?.title}`,
                     `--------------------`,
-                    `👤 作者：${payload.pull_request.user?.login}`,
-                    `🔗 链接：${payload.pull_request.html_url}`
+                    `👤 作者：${payload.pull_request?.user?.login}`,
+                    `🔗 链接：${payload.pull_request?.html_url}`
                 ].join('\n');
             } else if (payload.action === 'closed') {
                 return [
-                    `📦 仓库：${payload.repository.full_name}`,
+                    `📦 仓库：${payload.repository?.full_name}`,
                     `--------------------`,
                     `❌ 关闭 PR`,
-                    `#${payload.pull_request.number} ${payload.pull_request.title}`,
+                    `#${payload.pull_request?.number} ${payload.pull_request?.title}`,
                     `--------------------`,
-                    `👤 作者：${payload.pull_request.user?.login}`,
-                    `🔗 链接：${payload.pull_request.html_url}`
+                    `👤 作者：${payload.pull_request?.user?.login}`,
+                    `🔗 链接：${payload.pull_request?.html_url}`
                 ].join('\n');
             }
             break;
         case 'create':
             return [
-                `📦 仓库：${payload.repository.full_name}`,
+                `📦 仓库：${payload.repository?.full_name}`,
                 `--------------------`,
                 `🆕 创建 ${payload.ref_type}`,
                 `📄 名称：${payload.ref}`
             ].join('\n');
         case 'delete':
             return [
-                `📦 仓库：${payload.repository.full_name}`,
+                `📦 仓库：${payload.repository?.full_name}`,
                 `--------------------`,
                 `🗑️ 删除 ${payload.ref_type}`,
                 `📄 名称：${payload.ref}`

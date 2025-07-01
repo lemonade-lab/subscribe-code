@@ -2,13 +2,13 @@ import { getIoRedis } from '@alemonjs/db';
 
 const pauseStatusKey = 'alemonjs:githubBot:pauseStatus';
 
-// 设置暂停
+/**设置暂停推送 */
 export async function setPause(chatType: string, chatId: string, pause: boolean) {
     const ioRedis = getIoRedis();
     await ioRedis.hset(pauseStatusKey, `${chatType}:${chatId}`, pause ? '1' : '0');
 }
 
-// 查询是否暂停
+/**查询推送是否暂停 */
 export async function isPaused(chatType: string, chatId: string): Promise<boolean> {
     const ioRedis = getIoRedis();
     const v = await ioRedis.hget(pauseStatusKey, `${chatType}:${chatId}`);

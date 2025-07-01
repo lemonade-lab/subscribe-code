@@ -8,7 +8,6 @@ import {
 import { removePauseById } from '@src/models/github.sub.status';
 import { isAdmin, isOwner } from '@src/utils/config';
 import { Text, useMessage } from 'alemonjs';
-
 import { Regular } from 'alemonjs/utils';
 
 const removeByUrlReg =

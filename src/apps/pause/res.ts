@@ -3,7 +3,6 @@ import { setPause, setPauseById } from '@src/models/github.sub.status';
 import { selects } from '@src/apps/index';
 import { isAdmin, isOwner } from '@src/utils/config';
 import { listAllSubscriptionsByType } from '@src/models/github.sub.data';
-
 import { Regular } from 'alemonjs/utils';
 
 export const pauseAllReg = /^(!|！|\/)?(暂停|停止|关闭)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)推送$/;

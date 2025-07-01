@@ -1,8 +1,8 @@
-import { Text, useMessage } from 'alemonjs';
 import { platform as onebot } from '@alemonjs/onebot';
 import { selects } from '@src/apps/index';
 import { addSubscription } from '@src/models/github.sub.data';
 import { isAdmin, isOwner } from '@src/utils/config';
+import { Text, useMessage } from 'alemonjs';
 
 export const regular =
     /^([!！/])?(添加|订阅|add)(仓库|github仓库|GitHub仓库|GitHub代码仓库)?\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;

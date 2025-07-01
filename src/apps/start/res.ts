@@ -1,9 +1,8 @@
-import { Text, useMessage } from 'alemonjs';
-import { setPause, setPauseById } from '@src/models/github.sub.status';
 import { selects } from '@src/apps/index';
-import { isAdmin, isOwner } from '@src/utils/config';
 import { listAllSubscriptionsByType } from '@src/models/github.sub.data';
-
+import { setPause, setPauseById } from '@src/models/github.sub.status';
+import { isAdmin, isOwner } from '@src/utils/config';
+import { Text, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
 const startAllReg = /^(!|！|\/)?(开启|启动|打开)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)推送$/;

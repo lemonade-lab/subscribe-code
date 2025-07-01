@@ -1,6 +1,6 @@
 import { selects } from '@src/apps/index';
-import { getCodeConfig, isOwner, saveCodeConfig } from '@src/utils/config';
-import { Text, useMessage, useMention } from 'alemonjs';
+import { configValue, enhancedConfigUpdate, isOwner } from '@src/utils/config';
+import { Text, useMention, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
 const addAdminReg = /^(!|！|\/)?新增仓库订阅管理员\s*([a-zA-Z0-9_.-]+)?$/;
@@ -12,7 +12,7 @@ export default onResponse(selects, async e => {
     const [message] = useMessage(e);
     const [mention] = useMention(e);
 
-    const mentionUsers = await mention?.findOne();
+    const mentionUsers: any = await mention?.findOne();
     let mentionUserKey: string | undefined;
     if (mentionUsers?.code === 2000 && mentionUsers?.data) {
         mentionUserKey = mentionUsers.data.UserKey;
@@ -43,17 +43,12 @@ export default onResponse(selects, async e => {
             newAdmin = mentionUserKey;
         }
 
-        const nodeValue = getCodeConfig();
-        const admins = nodeValue.admins_id || [];
-
+        const admins = configValue?.['alemonjs-code']?.admins_id || [];
         if (admins.includes(newAdmin)) {
             message.send(format(Text('该账号已是管理员')));
             return;
         }
-        const newAdmins = [...admins, newAdmin];
-        saveCodeConfig({
-            admins_id: newAdmins
-        });
+        enhancedConfigUpdate('alemonjs-code', { admins_id: [...admins, newAdmin] }, { merge: true, unique: true });
         message.send(format(Text(`已添加管理员: ${newAdmin}`)));
     }
 
@@ -74,16 +69,15 @@ export default onResponse(selects, async e => {
         } else if (mentionUserKey) {
             delAdmin = mentionUserKey;
         }
-        const nodeValue = getCodeConfig();
-        const admins = nodeValue.admins_id || [];
+
+        let admins = configValue?.['alemonjs-code']?.admins_id || [];
         if (!admins.includes(delAdmin)) {
             message.send(format(Text('该账号不是管理员')));
             return;
         }
-        saveCodeConfig({
-            admins_id: admins.filter((id: string) => id !== delAdmin)
-        });
+        admins = admins.filter((id: string) => id !== delAdmin);
         message.send(format(Text(`已删除管理员: ${delAdmin}`)));
+        enhancedConfigUpdate('alemonjs-code', { admins_id: admins }, { merge: true, unique: true });
     }
 
     return;
