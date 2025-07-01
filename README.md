@@ -1,22 +1,12 @@
 # AlemonJS Github Dynamic Bot
 
-- Github动态机器人，可以自动推送Github仓库的动态到OneBot平台。
+- 仓库动态机器人，可以自动推送Github仓库的动态到OneBot平台。
 
 ## 🚩运行环境：
 
 - node v22+ 下载地址：https://nodejs.org/zh-cn/download/
 
-- Redis 下载地址：https://redis.io/download
-
-```sh
-# Ubuntu安装示例
-# 安装redis
-sudo apt-get install redis-server
-# 启动redis
-sudo systemctl start redis
-#开机自启
-sudo systemctl enable redis
-```
+- Redis 6+ 下载地址：https://redis.io/download
 
 ## 拉取仓库
 
@@ -36,11 +26,11 @@ git clone -b release https://github.com/lemonade-lab/subscribe-code.git
 
 - 进入Github仓库，点击`Settings` -> `Webhooks` -> `Add webhook`
 
-- Payload URL：`http://你的机器人地址:端口/github/webhook`
+- Payload URL：`http://[ip]:[port]/github/webhook`
 
 - Content type：`application/json`
 
-- Secret：填写自动生成保存在`alemon.config.yaml`中的`github_secret`值
+- Secret：`subscribe-code`(可自定义)
 
 - 按需选择推送事件：
 
@@ -67,10 +57,10 @@ onebot:
     master_key: null # 主人id, 消息显示的的UserKey
 alemonjs-code:
     # 配置Github Webhook Secret
-    github_secret: '' # Github Webhook Secret，需与Github Webhook配置时填写的一致
+    github_secret: 'subscribe-code' # Github Webhook Secret，需与Github Webhook配置时填写的一致
 ```
 
-> redis 使用默认配置，若修改，请阅读文档
+> redis 使用默认配置，若修改，请阅读文档 @alemonjs/db
 
 - 运行
 
@@ -87,7 +77,7 @@ yarn app --login onebot
 > 当前仅仅支持运行在onebot协议
 > 需与配置Github Webhook部分配合使用。
 
-- 启动bot后，在群聊/私聊中发送`订阅`指令，机器人会回复`订阅成功`即为成功订阅。
+- 启动bot后，在群聊/私聊中发送指令
 
 - 指令列表：
 
@@ -120,9 +110,9 @@ yarn app --login onebot
 
 ```yaml
 alemonjs-code:
-    github_secret: xxxxx # 需Github Webhook配置时填写的一致
+    github_secret: 'subscribe-code' # 需Github Webhook配置时填写的一致
     webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
-    ws_secret: '' # 密钥（选填）
+    ws_secret: 'subscribe-ws' # 密钥（选填，仅启服务器，不启机器人时可配）
 ```
 
 - 启动服务器和机器人
@@ -153,6 +143,7 @@ yarn server
 alemonjs-code:
     # 该配置为非空时，将启动ws连接使用中转模式
     ws_server_url: ws://127.0.0.1:18666 # 连接地址 （端口要和服务上的一致）
+    ws_secret: 'subscribe-ws' # 密钥（要和ws上配置的ws_secret一致）
 ```
 
 ```sh
