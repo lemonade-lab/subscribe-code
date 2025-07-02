@@ -106,7 +106,7 @@ export function isAdmin(userKey: string): boolean {
     if (!configValue?.['alemonjs-code']?.admins_id) {
         enhancedConfigUpdate('alemonjs-code', { admins_id: [] });
     }
-    const admins = configValue?.['alemonjs-code']?.admins_id || [];
+    const admins: string[] = configValue?.['alemonjs-code']?.admins_id || [];
     return admins.includes(userKey);
 }
 
@@ -117,4 +117,17 @@ export function isAdmin(userKey: string): boolean {
  */
 export function isOwner(e: PublicEventMessageCreate | PrivateEventMessageCreate): boolean {
     return !!e.IsMaster;
+}
+
+/**
+ * 判断是否可以私聊订阅
+ * @param userKey 用户ID或用户名 e.UserKey
+ * @returns boolean
+ */
+export function canPrivateSubscribe(userKey: string): boolean {
+    if (!configValue?.['alemonjs-code']?.can_private_subscribe_users) {
+        enhancedConfigUpdate('alemonjs-code', { can_private_subscribe_users: [] });
+    }
+    const canSubscribePrivateUsers: string[] = configValue?.['alemonjs-code']?.can_private_subscribe_users || [];
+    return canSubscribePrivateUsers.includes(userKey);
 }

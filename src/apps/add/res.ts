@@ -1,7 +1,7 @@
 import { platform as onebot } from '@alemonjs/onebot';
 import { selects } from '@src/apps/index';
 import { addSubscription } from '@src/models/github.sub.data';
-import { isAdmin, isOwner } from '@src/utils/config';
+import { isAdmin, isOwner, canPrivateSubscribe } from '@src/utils/config';
 import { Text, useMessage } from 'alemonjs';
 
 export const regular =
@@ -39,7 +39,20 @@ export default onResponse(selects, async e => {
 
     // 私聊处理
     if (e.name === 'private.message.create' && e.MessageId) {
-        message.send(format(Text('私聊不支持添加订阅')));
+        if (!(isOwner(e) || canPrivateSubscribe(e.UserKey))) {
+            message.send(format(Text('只有主人或被授权的用户可以私聊添加订阅')));
+            return;
+        }
+        const repoUrl = extractRepoUrl(e.MessageText);
+        const chatType = 'private.message.create';
+        const chatId = e.OpenId;
+        if (repoUrl) {
+            await addSubscription(chatType, chatId, repoUrl);
+            message.send(format(Text(`订阅成功：${repoUrl}`)));
+        } else {
+            message.send(format(Text('请输入正确的GitHub仓库地址')));
+        }
+        return;
         return;
     }
 });

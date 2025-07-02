@@ -69,7 +69,7 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                 }
                 if (msg.type === 'clientId' && msg.clientId) {
                     clientId = msg.clientId;
-                    console.log(
+                    logger.info(
                         chalk.bgGreen.black('[WebSocket Client]'),
                         chalk.green('认证通过，分配到客户端Id:'),
                         chalk.bold(clientId)
@@ -134,7 +134,7 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                     await sendMessage(sub.chatType, sub.chatId, message);
                 }
             } catch (e) {
-                console.log('[WebSocket Client] 消息处理异常:', e);
+                logger.error('[WebSocket Client] 消息处理异常:', e);
             }
         });
 

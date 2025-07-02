@@ -27,7 +27,7 @@ export default onResponse(selects, async e => {
             const chatType = 'message.create';
             const chatId = e.SpaceId;
 
-            console.log('查看当前群聊订阅', chatType, chatId);
+            logger.info('查看当前群聊订阅', chatType, chatId);
             const subs = await listSubscriptions(chatType, chatId);
             const pausedAll = await isPaused(chatType, chatId);
             const chatStatus = pausedAll ? '⚠' : '✅';
@@ -49,7 +49,7 @@ export default onResponse(selects, async e => {
             const chatType = 'private.message.create';
             const chatId = e.OpenId;
 
-            console.log('查看当前私聊订阅', chatType, chatId);
+            logger.info('查看当前私聊订阅', chatType, chatId);
             const subs = await listSubscriptions(chatType, chatId);
             const pausedAll = await isPaused(chatType, chatId);
             const chatStatus = pausedAll ? '⚠' : '✅';
@@ -75,7 +75,7 @@ export default onResponse(selects, async e => {
         }
         if ((e.name === 'message.create' || e.name === 'private.message.create') && e.MessageId) {
             const msgs = [`订阅的全部GitHub仓库列表：\n`];
-            console.log('执行查看全部仓库订阅');
+            logger.info('执行查看全部仓库订阅');
             const groupSubs = await listAllSubscriptionsByType('message.create');
             if (groupSubs.length !== 0) {
                 msgs.push(`--------------------\n👪群聊订阅：`);
@@ -129,7 +129,7 @@ export default onResponse(selects, async e => {
             chatId = e.OpenId;
         }
 
-        console.log(`检查仓库 ${repoUrl} 是否在聊天 ${chatId} 中订阅`);
+        logger.info(`检查仓库 ${repoUrl} 是否在聊天 ${chatId} 中订阅`);
         const subs = await listSubscriptions(chatType, chatId);
         const isSubscribed = subs.map(sub => sub.repo).includes(repoUrl);
 

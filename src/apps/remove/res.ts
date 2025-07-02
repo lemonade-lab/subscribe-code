@@ -46,7 +46,7 @@ export default onResponse(selects, async e => {
                 const removed = await removeSubscriptionByUrl(chatType, chatId, repoUrl);
                 if (removed) {
                     await removePauseById(repoId); // 删除对应的暂停状态
-                    console.log('已成功删除repo：', repoUrl);
+                    logger.info('已成功删除repo：', repoUrl);
                     message.send(format(Text(`订阅删除成功：${repoUrl}`)));
                 } else {
                     message.send(format(Text('请输入完整的GitHub仓库地址')));
@@ -70,7 +70,7 @@ export default onResponse(selects, async e => {
                 const removed = await removeSubscriptionByUrl(chatType, chatId, repoUrl);
                 if (removed) {
                     await removePauseById(repoId); // 删除对应的暂停状态
-                    console.log('已成功删除repo：', repoUrl);
+                    logger.info('已成功删除repo：', repoUrl);
                     message.send(format(Text(`订阅删除成功：${repoUrl}`)));
                 }
             } else {
