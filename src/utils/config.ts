@@ -1,5 +1,22 @@
 import { getConfig, getConfigValue, PrivateEventMessageCreate, PublicEventMessageCreate } from 'alemonjs';
 import crypto from 'crypto';
+import * as fs from 'fs';
+import path, { basename, dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const _path = process.cwd();
+const thisFilePath = dirname(fileURLToPath(import.meta.url));
+const alemonjsCodePath = join(thisFilePath, '..', '..');
+
+export const alemonjsCodeFolderName = basename(alemonjsCodePath);
+
+export const _paths = {
+    root: _path, // 进程根目录
+    alemonjsCodePath, // 项目根目录
+    alemonjsCodeFolderName // 所在文件夹名称
+};
+
+export const alemonjsCodeVersion = readPackageJsonKey('version', path.join(_paths.alemonjsCodePath, 'package.json'));
 
 /**
  * 整个配置文件操作方法
@@ -130,4 +147,25 @@ export function canPrivateSubscribe(userKey: string): boolean {
     }
     const canSubscribePrivateUsers: string[] = configValue?.['alemonjs-code']?.can_private_subscribe_users || [];
     return canSubscribePrivateUsers.includes(userKey);
+}
+
+/** 读取package.json文件，获取指定key的值
+ * @param keyName 要获取的key名称
+ * @param path package.json文件路径
+ */
+export function readPackageJsonKey(keyName: string, path: string): string | null {
+    try {
+        const content = fs.readFileSync(path, 'utf-8');
+        const packageJson: { [key: string]: any } = JSON.parse(content);
+        const match: string | null = packageJson[keyName];
+
+        if (match) {
+            return match;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        logger.error(`readPackageJsonKey error: ${error}`);
+        return null;
+    }
 }
