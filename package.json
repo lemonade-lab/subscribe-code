@@ -1,6 +1,6 @@
 {
     "name": "alemonjs-code",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "仓库动态订阅",
     "author": "snowtafir, ningmengchongshui",
     "type": "module",
@@ -42,7 +42,7 @@
         "@types/koa-bodyparser": "^4.3.12",
         "@types/koa-router": "^7.4.8",
         "@types/ws": "8.18.1",
-        "alemonjs": "^2.1.0-alpha.17",
+        "alemonjs": "^2.1.0-alpha.18",
         "cssnano": "^7.0.6",
         "eslint": "^9.14.0",
         "eslint-config-prettier": "^9.1.0",

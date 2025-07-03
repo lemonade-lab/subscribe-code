@@ -8,6 +8,19 @@
 
 - Redis 6+ 下载地址：https://redis.io/download
 
+- 安装chrome或chromium浏览器，其他浏览器可能存在兼容性问题。
+
+1. chrome 浏览器 v131+ win_x64下载地址：https://www.google.cn/chrome/
+2. chromium 浏览器 v128+ Linux/win手动下载安装：https://download-chromium.appspot.com
+
+> 示例linux命令行安装chromiun浏览器：
+
+```sh
+sudo apt-get install chromium-browser # Ubuntu/Debian
+sudo dnf install chromium # Fedora
+sudo yum install chromium # CentOS Stream 8
+```
+
 ## 拉取仓库
 
 ```sh
@@ -79,7 +92,7 @@ yarn app --login onebot
 
 - 启动bot后，在群聊/私聊中发送指令
 
-- 指令列表：
+- 指令列表：向聊天机器人发送`!仓库帮助`即可查看
 
 | 用途                   | 描述                                                                                                     | 指令                                                         |
 | ---------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
@@ -95,6 +108,8 @@ yarn app --login onebot
 | 关闭某个仓库推送       | 关闭某个已订阅的Github仓库动态推送，编号可通过`!仓库列表`查看，权限owner/admin                           | `!关闭编号仓库xxxxxx`                                        |
 | 添加仓库订阅管理员     | 添加某个群聊成员为Github仓库订阅管理员，权限owner，userKey可通过后台成员消息日志查看                     | `!新增仓库订阅管理员 @user` 或 `!新增仓库订阅管理员 userKey` |
 | 删除仓库订阅管理员     | 从管理员列表删除某个仓库订阅管理员，权限owner，userKey可通过后台成员消息日志查看                         | `!删除仓库订阅管理员 @user` 或 `!删除仓库订阅管理员 userKey` |
+| 授权私信订阅           | 授权某个群聊成员允许私信订阅，权限owner，userKey可通过后台成员消息日志查看                               | `!授权私信订阅  @user` 或 `!授权私信订阅  userKey`           |
+| 取消授权私信订阅       | 取消授权某个群聊成员私信订阅权限，权限owner，userKey可通过后台成员消息日志查看                           | `!取消权私信订阅 @user` 或 `!取消权私信订阅 userKey`         |
 
 ## 四、🎈连接说明
 
