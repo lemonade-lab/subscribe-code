@@ -219,7 +219,11 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                         const expected = keyHashData(WS_SECRET, challenge);
                         if (data.signature === expected) {
                             authed = true;
-                            clientId = crypto.createHash('sha256').update(data.fingerPrint).digest('hex');
+                            clientId = crypto
+                                .createHash('sha256')
+                                .update(data.fingerPrint)
+                                .digest('hex')
+                                .substring(0, 6);
                             (ws as any).clientId = clientId;
                             clients.add(ws);
                             ws.send(JSON.stringify({ type: 'clientId', clientId }));

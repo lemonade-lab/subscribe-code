@@ -31,7 +31,7 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
             logger.info(
                 chalk.bgBlue.white('[WebSocket Client]'),
                 chalk.blue('已连接到服务端:'),
-                chalk.bold({ url: WS_SERVER_URL })
+                chalk.bold(`${WS_SERVER_URL}`)
             );
             heartbeat();
         });

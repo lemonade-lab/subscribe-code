@@ -8,6 +8,19 @@
 
 - Redis 6+ 下载地址：https://redis.io/download
 
+- 安装chrome或chromium浏览器，其他浏览器可能存在兼容性问题。
+
+1. chrome 浏览器 v131+ win_x64下载地址：https://www.google.cn/chrome/
+2. chromium 浏览器 v128+ Linux/win手动下载安装：https://download-chromium.appspot.com
+
+> 示例linux命令行安装chromiun浏览器：
+
+```sh
+sudo apt-get install chromium-browser # Ubuntu/Debian
+sudo dnf install chromium # Fedora
+sudo yum install chromium # CentOS Stream 8
+```
+
 ## 拉取仓库
 
 ```sh
