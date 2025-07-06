@@ -1,7 +1,7 @@
 import { formatGithubEvent } from '@src/models/github.make.msg';
 import { sendMessage } from '@src/models/github.push.api';
-import { genSubId, getSubscriptionsByRepo } from '@src/models/github.sub.data';
-import { isPaused, isPausedById } from '@src/models/github.sub.status';
+import SubscriptionService from '@src/models/github.sub.operation';
+import { SubscriptionStatus } from '@src/models/github.sub.permissoin';
 import { keyHashData } from '@src/utils/config';
 import chalk from 'chalk';
 import crypto from 'crypto';
@@ -122,7 +122,7 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                 logger.info(chalk.bgGray.black('[GitHub Webhook]'), chalk.gray('事件未生成消息，已忽略'));
                 return;
             }
-            const subs = await getSubscriptionsByRepo(repo);
+            const subs = await SubscriptionService.getSubIdByRepo(repo);
             if (!subs || subs.length === 0) {
                 ctx.status = 202;
                 ctx.body = { status: 'no subscription', message: 'bot未有任何聊天订阅该仓库，消息未发送' };
@@ -134,21 +134,21 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                 return;
             }
             for (const sub of subs) {
-                const subId = genSubId(sub.chatType, sub.chatId, repo);
-                if (await isPaused(sub.chatType, sub.chatId)) {
+                const subId = sub.id;
+                if (!SubscriptionService.isAllSubscriptionsEnabled(subs.filter(s => s.id === subId))) {
                     logger.info(
                         chalk.bgYellow.black('[GitHub Webhook]'),
                         chalk.yellow('该聊天的推送已暂停，跳过发送：'),
-                        `[${sub.chatType}] [${sub.chatId}]`,
+                        `[${sub.poolType}] [${sub.chatId}]`,
                         chalk.gray(repo)
                     );
                     continue;
                 }
-                if (await isPausedById(subId)) {
+                if (sub.status === SubscriptionStatus.Disabled) {
                     logger.info(
                         chalk.bgYellow.black('[GitHub Webhook]'),
                         chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
-                        `[${sub.chatType}] [${sub.chatId}] [${subId}]`,
+                        `[${sub.poolType}] [${sub.chatId}] [${subId}]`,
                         chalk.gray(repo)
                     );
                     continue;
@@ -161,7 +161,7 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                     chalk.green('from repo:'),
                     chalk.bold(repo)
                 );
-                await sendMessage(sub.chatType, sub.chatId, message);
+                await sendMessage(sub.poolType, sub.chatId, message);
             }
 
             // 2. 广播转发

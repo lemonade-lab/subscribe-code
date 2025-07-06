@@ -1,11 +1,10 @@
 import { selects } from '@src/apps/index';
-import { listAllSubscriptionsByType, listSubscriptions } from '@src/models/github.sub.data';
-import { isPaused, isPausedById } from '@src/models/github.sub.status';
-import { isAdmin, isOwner } from '@src/utils/config';
+import SubscriptionService from '@src/models/github.sub.operation';
+import PermissionService, { SubscriptionPool, SubscriptionStatus, UserRole } from '@src/models/github.sub.permissoin';
 import { Text, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
-const listReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)列表$/;
+const listReg = /^(!|！|\/)?(本聊天)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)列表$/;
 const listAllReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)全部列表$/;
 const checkRepoReg =
     /^(!|！|\/)?检查(仓库|github仓库|GitHub仓库|GitHub代码仓库)\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
@@ -28,14 +27,14 @@ export default onResponse(selects, async e => {
             const chatId = e.SpaceId;
 
             logger.info('查看当前群聊订阅', chatType, chatId);
-            const subs = await listSubscriptions(chatType, chatId);
-            const pausedAll = await isPaused(chatType, chatId);
-            const chatStatus = pausedAll ? '⚠' : '✅';
+            const subs = await SubscriptionService.getSubDataBySpaceID(chatId);
+            const usedAll = await SubscriptionService.isAllSubscriptionsEnabled(subs);
+            const chatStatus = usedAll ? '✅' : '⚠';
 
             const lines: string[] = [];
             for (const sub of subs) {
-                const paused = pausedAll ? '⚠' : (await isPausedById(sub.id)) ? '⚠' : '✅';
-                lines.push(`${paused} ${sub.id}：${sub.repo}`);
+                const used = usedAll ? (sub.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
+                lines.push(`${used} ${sub.id}：${sub.repoUrl}`);
             }
             lines.push(`\n⚠：暂停推送，✅：正常推送`);
             message.send(
@@ -50,14 +49,14 @@ export default onResponse(selects, async e => {
             const chatId = e.OpenId;
 
             logger.info('查看当前私聊订阅', chatType, chatId);
-            const subs = await listSubscriptions(chatType, chatId);
-            const pausedAll = await isPaused(chatType, chatId);
-            const chatStatus = pausedAll ? '⚠' : '✅';
+            const subs = await SubscriptionService.getSubDataByOpenID(chatId);
+            const usedAll = await SubscriptionService.isAllSubscriptionsEnabled(subs);
+            const chatStatus = usedAll ? '✅' : '⚠';
 
             const lines: string[] = [];
             for (const sub of subs) {
-                const paused = pausedAll ? '⚠' : (await isPausedById(sub.id)) ? '⚠' : '✅';
-                lines.push(`${paused} ${sub.id}：${sub.repo}`);
+                const used = usedAll ? (sub.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
+                lines.push(`${used} ${sub.id}：${sub.repoUrl}`);
             }
             lines.push(`\n⚠：暂停推送，✅：正常推送`);
             message.send(
@@ -69,38 +68,45 @@ export default onResponse(selects, async e => {
 
     // 查看全部订阅列表
     if (listAllReg.test(e.MessageText)) {
-        if (!(isOwner(e) || isAdmin(e.UserKey))) {
-            message.send(format(Text('你无管理员权限，无法查看全部仓库订阅')));
+        if (
+            !(
+                PermissionService.isOwner(e) ||
+                (await PermissionService.getUserRole(e.UserKey)) === UserRole.GlobalCodeMaster
+            )
+        ) {
+            message.send(format(Text('你无全局管理员权限，无法查看全部仓库订阅')));
             return;
         }
         if ((e.name === 'message.create' || e.name === 'private.message.create') && e.MessageId) {
             const msgs = [`订阅的全部GitHub仓库列表：\n`];
             logger.info('执行查看全部仓库订阅');
-            const groupSubs = await listAllSubscriptionsByType('message.create');
+            const groupSubs = await SubscriptionService.getSubscriptionsByPoolType(SubscriptionPool.Group);
             if (groupSubs.length !== 0) {
                 msgs.push(`--------------------\n👪群聊订阅：`);
                 for (const sub of groupSubs) {
-                    const pausedAll = await isPaused('message.create', sub.chatId);
-                    const chatStatus = pausedAll ? '⚠' : '✅';
+                    const forEachGroupSubs = groupSubs.filter(item => item.id === sub.id);
+                    const usedAll = await SubscriptionService.isAllSubscriptionsEnabled(forEachGroupSubs);
+                    const chatStatus = usedAll ? '✅' : '⚠';
                     const lines = await Promise.all(
-                        sub.repos.map(async r => {
-                            const paused = pausedAll ? '⚠' : (await isPausedById(r.id)) ? '⚠' : '✅';
-                            return `${paused} ${r.id}：${r.repo}`;
+                        forEachGroupSubs.map(async r => {
+                            const used = usedAll ? (r.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
+                            return `${used} ${r.id}：${r.repoUrl}`;
                         })
                     );
                     msgs.push(`\n${sub.chatId}${chatStatus}：\n${lines.join('\n')}\n`);
                 }
             }
-            const privateSubs = await listAllSubscriptionsByType('private.message.create');
+            const privateSubs = await SubscriptionService.getSubscriptionsByPoolType(SubscriptionPool.Private);
             if (privateSubs.length !== 0) {
                 msgs.push(`--------------------\n🧑私聊订阅：`);
                 for (const sub of privateSubs) {
-                    const pausedAll = await isPaused('private.message.create', sub.chatId);
-                    const chatStatus = pausedAll ? '⚠' : '✅';
+                    const forEachPrivateSubs = groupSubs.filter(item => item.id === sub.id);
+                    const usedAll = await SubscriptionService.isAllSubscriptionsEnabled(forEachPrivateSubs);
+                    const chatStatus = usedAll ? '✅' : '⚠';
                     const lines = await Promise.all(
-                        sub.repos.map(async r => {
-                            const paused = pausedAll ? '⚠' : (await isPausedById(r.id)) ? '⚠' : '✅';
-                            return `${paused} ${r.id}：${r.repo}`;
+                        forEachPrivateSubs.map(async r => {
+                            const used = usedAll ? (r.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
+                            return `${used} ${r.id}：${r.repoUrl}`;
                         })
                     );
                     msgs.push(`\n${sub.chatId}${chatStatus}：\n${lines.join('\n')}\n`);
@@ -120,18 +126,16 @@ export default onResponse(selects, async e => {
             return;
         }
 
-        let chatType: string, chatId: string;
+        let chatId: string;
         if (e.name === 'message.create') {
-            chatType = 'message.create';
             chatId = e.SpaceId;
         } else if (e.name === 'private.message.create') {
-            chatType = 'private.message.create';
             chatId = e.OpenId;
         }
 
         logger.info(`检查仓库 ${repoUrl} 是否在聊天 ${chatId} 中订阅`);
-        const subs = await listSubscriptions(chatType, chatId);
-        const isSubscribed = subs.map(sub => sub.repo).includes(repoUrl);
+        const subs = await SubscriptionService.getSubIdByRepo(repoUrl);
+        const isSubscribed = subs.map(sub => sub.chatId).includes(chatId);
 
         if (isSubscribed) {
             message.send(format(Text(`仓库 ${repoUrl} 在本聊天中已订阅`)));

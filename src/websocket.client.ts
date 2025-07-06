@@ -1,7 +1,7 @@
 import { formatGithubEvent } from '@src/models/github.make.msg';
 import { sendMessage } from '@src/models/github.push.api';
-import { genSubId, getSubscriptionsByRepo } from '@src/models/github.sub.data';
-import { isPaused, isPausedById } from '@src/models/github.sub.status';
+import SubscriptionService from '@src/models/github.sub.operation';
+import { SubscriptionStatus } from '@src/models/github.sub.permissoin';
 import { keyHashData } from '@src/utils/config';
 import chalk from 'chalk';
 import crypto from 'crypto';
@@ -95,7 +95,7 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                     logger.info(chalk.bgGray.black('[WebSocket Client]'), chalk.gray('事件未生成消息，已忽略'));
                     return;
                 }
-                const subs = await getSubscriptionsByRepo(repo);
+                const subs = await SubscriptionService.getSubIdByRepo(repo);
                 if (!subs || subs.length === 0) {
                     logger.info(
                         chalk.bgYellow.black('[WebSocket Client]'),
@@ -105,25 +105,26 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                     return;
                 }
                 for (const sub of subs) {
-                    const subId = genSubId(sub.chatType, sub.chatId, repo);
-                    if (await isPaused(sub.chatType, sub.chatId)) {
+                    const subId = sub.id;
+                    if (!SubscriptionService.isAllSubscriptionsEnabled(subs.filter(s => s.id === subId))) {
                         logger.info(
                             chalk.bgYellow.black('[WebSocket Client]'),
                             chalk.yellow('该聊天的推送已暂停，跳过发送：'),
-                            `[${sub.chatType}] [${sub.chatId}]`,
+                            `[${sub.poolType}] [${sub.chatId}]`,
                             chalk.gray(repo)
                         );
                         continue;
                     }
-                    if (await isPausedById(subId)) {
+                    if (sub.status === SubscriptionStatus.Disabled) {
                         logger.info(
                             chalk.bgYellow.black('[WebSocket Client]'),
                             chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
-                            `[${sub.chatType}] [${sub.chatId}] [${subId}]`,
+                            `[${sub.poolType}] [${sub.chatId}] [${subId}]`,
                             chalk.gray(repo)
                         );
                         continue;
                     }
+
                     logger.info(
                         chalk.bgGreen.black('[WebSocket Client]'),
                         chalk.green('发送消息:'),
@@ -131,7 +132,7 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                         chalk.green('from repo:'),
                         chalk.bold(repo)
                     );
-                    await sendMessage(sub.chatType, sub.chatId, message);
+                    await sendMessage(sub.poolType, sub.chatId, message);
                 }
             } catch (e) {
                 logger.error('[WebSocket Client] 消息处理异常:', e);

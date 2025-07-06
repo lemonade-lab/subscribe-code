@@ -41,7 +41,7 @@ function Help({ data, theme = 'dark' }: PropsType) {
                                 <div className="flex flex-wrap pt-2 pb-2 px-6 gap-x-4 gap-y-2">
                                     {val.list.map((item, itemIndex) => (
                                         <div
-                                            className="flex items-center min-w-[250px] max-w-[360px] flex-1 basis-0 bg-white bg-opacity-80 shadow-md rounded-lg px-3 py-2 border border-pink-200"
+                                            className="flex items-center min-w-[250px] max-w-[330px] flex-1 basis-0 bg-white bg-opacity-80 shadow-md rounded-lg px-3 py-2 border border-pink-200"
                                             key={itemIndex}
                                         >
                                             <div className="ml-1 break-all">

@@ -1,4 +1,4 @@
-import { getConfig, getConfigValue, PrivateEventMessageCreate, PublicEventMessageCreate } from 'alemonjs';
+import { getConfig, getConfigValue } from 'alemonjs';
 import crypto from 'crypto';
 import * as fs from 'fs';
 import path, { basename, dirname, join } from 'path';
@@ -49,7 +49,6 @@ export const keyHashData = (key: string, data: string) => {
 const defaultAlemonjsCodeConfig = {
     github_secret: '',
     webhook_port: '',
-    admins_id: [],
     ws_secret: '',
     ws_server_url: ''
 };
@@ -112,41 +111,6 @@ export function enhancedConfigUpdate(
     val[topKey] = newValue;
     config.saveValue(val);
     return val;
-}
-
-/**
- * 判断是否是管理员
- * @param userKey 用户ID或用户名 e.UserKey
- * @returns  boolean
- */
-export function isAdmin(userKey: string): boolean {
-    if (!configValue?.['alemonjs-code']?.admins_id) {
-        enhancedConfigUpdate('alemonjs-code', { admins_id: [] });
-    }
-    const admins: string[] = configValue?.['alemonjs-code']?.admins_id || [];
-    return admins.includes(userKey);
-}
-
-/**
- * 判断是否是所有者
- * @param e 消息对象
- * @returns boolean
- */
-export function isOwner(e: PublicEventMessageCreate | PrivateEventMessageCreate): boolean {
-    return !!e.IsMaster;
-}
-
-/**
- * 判断是否可以私聊订阅
- * @param userKey 用户ID或用户名 e.UserKey
- * @returns boolean
- */
-export function canPrivateSubscribe(userKey: string): boolean {
-    if (!configValue?.['alemonjs-code']?.can_private_subscribe_users) {
-        enhancedConfigUpdate('alemonjs-code', { can_private_subscribe_users: [] });
-    }
-    const canSubscribePrivateUsers: string[] = configValue?.['alemonjs-code']?.can_private_subscribe_users || [];
-    return canSubscribePrivateUsers.includes(userKey);
 }
 
 /** 读取package.json文件，获取指定key的值
