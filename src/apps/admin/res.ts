@@ -1,3 +1,6 @@
+import { platform as discord } from '@alemonjs/discord';
+import { platform as kook } from '@alemonjs/kook';
+import { platform as onebot } from '@alemonjs/onebot';
 import { selects } from '@src/apps/index';
 import PermissionService, { Action, UserRole } from '@src/models/github.sub.permissoin';
 import { Text, useMention, useMessage } from 'alemonjs';
@@ -32,7 +35,11 @@ export const regular = Regular.or(
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
     const [mention] = useMention(e);
-
+    const checkPlatform = (r: string) => [onebot, discord, kook].includes(r);
+    if (!checkPlatform(e.Platform)) {
+        message.send(format(Text(`本仓库推送功能目前仅支持OneBot、Discord、Kook！${e.Platform}平台暂不支持`)));
+        return;
+    }
     const mentionUsers: any = await mention?.findOne();
     let mentionUserKey: string | undefined;
     if (mentionUsers?.code === 2000 && mentionUsers?.data) {

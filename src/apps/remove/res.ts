@@ -1,3 +1,5 @@
+import { platform as discord } from '@alemonjs/discord';
+import { platform as kook } from '@alemonjs/kook';
 import { platform as onebot } from '@alemonjs/onebot';
 import { selects } from '@src/apps/index';
 import SubscriptionService from '@src/models/github.sub.operation';
@@ -15,8 +17,9 @@ export const regular = Regular.or(removeSubByUrlReg, removeByIdReg, removeRepoPo
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
-    if (e.Platform !== onebot) {
-        message.send(format(Text('非OneBot平台，暂不支持')));
+    const checkPlatform = (r: string) => [onebot, discord, kook].includes(r);
+    if (!checkPlatform(e.Platform)) {
+        message.send(format(Text(`本仓库推送功能目前仅支持OneBot、Discord、Kook！${e.Platform}平台暂不支持`)));
         return;
     }
 
