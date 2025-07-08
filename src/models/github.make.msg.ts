@@ -10,7 +10,7 @@ export function formatGithubEvent(event: string, payload: any): string | null {
     if (!payload) return null;
 
     // 通用分隔线
-    const SEPARATOR = '───────────────────────';
+    const SEPARATOR = '────────────────';
 
     switch (event) {
         case 'push': {

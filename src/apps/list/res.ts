@@ -140,7 +140,7 @@ export default onResponse(selects, async e => {
             return;
         }
 
-        const msgs = [`📝仓库池列表：\n───────────────────────\n`];
+        const msgs = [`📝仓库池列表：\n────────────────\n`];
         logger.info('执行查看仓库池');
         const repoList = await SubscriptionService.listRepos();
         if (repoList && repoList.length > 0) {
