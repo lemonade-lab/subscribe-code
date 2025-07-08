@@ -122,6 +122,7 @@ yarn app --login onebot
 | **仓库池管理**       |                    |                                            |                                      |
 | 添加仓库到仓库池     | 主人/管理员        | `!添加仓库池 github.com/username/repo`     | 将仓库添加到共享仓库池               |
 | 从仓库池移除仓库     | 主人/管理员        | `!删除仓库池 github.com/username/repo`     | 从仓库池中移除仓库                   |
+| 查看仓库池           | 主人/管理员        | `!仓库池列表`                              | 查看仓库池中的仓库                   |
 | **群组订阅管理**     |                    |                                            |                                      |
 | 订阅Github仓库       | 主人/管理员        | `!订阅本聊天仓库 github.com/username/repo` | 订阅仓库动态通知                     |
 | 删除本聊天订阅的仓库 | 主人/管理员        | `!删除本聊天仓库 github.com/username/repo` | 仅删除当前群聊的订阅                 |
