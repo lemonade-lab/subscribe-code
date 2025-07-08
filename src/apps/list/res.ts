@@ -1,15 +1,21 @@
 import { selects } from '@src/apps/index';
 import SubscriptionService from '@src/models/github.sub.operation';
-import PermissionService, { SubscriptionPool, SubscriptionStatus, UserRole } from '@src/models/github.sub.permissoin';
+import PermissionService, {
+    Action,
+    SubscriptionPool,
+    SubscriptionStatus,
+    UserRole
+} from '@src/models/github.sub.permissoin';
 import { Text, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
-const listReg = /^(!|！|\/)?(本聊天)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)列表$/;
-const listAllReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)全部列表$/;
+const listRepoReg = /^(!|！|\/)?(本聊天)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)列表$/;
+const listAllRepoReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)全部列表$/;
+const viewRepoPoolReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库|repo)池列表$/;
 const checkRepoReg =
     /^(!|！|\/)?检查(仓库|github仓库|GitHub仓库|GitHub代码仓库)\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
 
-export const regular = Regular.or(listReg, listAllReg, checkRepoReg);
+export const regular = Regular.or(listRepoReg, listAllRepoReg, viewRepoPoolReg, checkRepoReg);
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
@@ -20,7 +26,7 @@ export default onResponse(selects, async e => {
     }
 
     // 查看本聊天的订阅列表
-    if (listReg.test(e.MessageText)) {
+    if (listRepoReg.test(e.MessageText)) {
         // 群聊触发则，记录群聊。
         if (e.name === 'message.create' && e.MessageId) {
             const chatType = 'message.create';
@@ -67,7 +73,7 @@ export default onResponse(selects, async e => {
     }
 
     // 查看全部订阅列表
-    if (listAllReg.test(e.MessageText)) {
+    if (listAllRepoReg.test(e.MessageText)) {
         if (
             !(
                 PermissionService.isOwner(e) ||
@@ -115,6 +121,33 @@ export default onResponse(selects, async e => {
             msgs.push(`\n⚠：暂停推送，✅：正常推送`);
             message.send(format(Text(`${msgs.join('') || '无订阅'}`)));
         }
+        return;
+    }
+
+    // 查看仓库池
+    if (viewRepoPoolReg.test(e.MessageText)) {
+        let role: string = UserRole.User;
+        let chatId: string;
+        if (e.name === 'message.create' && e.MessageId) {
+            chatId = e.SpaceId;
+            role = await PermissionService.getUserRole(e.UserKey, chatId, e);
+        } else if (e.name === 'private.message.create') {
+            chatId = e.OpenId;
+            role = await PermissionService.getUserRole(e.UserKey, chatId, e);
+        }
+        if (!PermissionService.checkPermission(e.UserKey, chatId, Action.view_repo_pool, e)) {
+            message.send(format(Text('你无管理员权限，无法查看仓库池列表')));
+            return;
+        }
+
+        const msgs = [`📝仓库池列表：\n───────────────────────\n`];
+        logger.info('执行查看仓库池');
+        const repoList = await SubscriptionService.listRepos();
+        if (repoList && repoList.length > 0) {
+            const lines = repoList.map(repo => `• ${repo}`);
+            msgs.push(lines.join('\n'));
+        }
+        message.send(format(Text(`${msgs.join('') || '仓库池为空'}`)));
         return;
     }
 
