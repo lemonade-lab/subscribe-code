@@ -8,12 +8,18 @@ import { Text, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
 const removeSubByUrlReg =
-    /^(!|！|\/)?(移除|取消|删除|del|DEL|delete|DELETE)(本聊天)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)\s*(https?:\/\/)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
-const removeByIdReg = /^(!|！|\/)?(移除|取消|删除|del|DEL|delete|DELETE)编号仓库\s*([a-z0-9]{8})$/i;
-const removeRepoPoolRegex =
-    /^([!！/])?(移除|取消|删除|del|DEL|delete|DELETE)(仓库池|github仓库池|GitHub代码仓库池)\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
+    /^([!|！|/])?(取消订阅仓库|codes-del|codes-d)\s*(https?:\/\/)?(www.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
+const removeByIdReg = /^(!|！|\/)?(取消订阅编号仓库|codessid-del|codessid-d)\s*([a-z0-9]{8})$/;
+const removeRepoFromPoolRegex =
+    /^([!！/])?(移除仓库池仓库|codep-del|codep-d)\s*(https?:\/\/)?(www.)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
+const removeRepoFromPoolByIdRegex = /^([!！/])?(移除仓库池索引仓库|codeprid-del|codeprid-d)\s*([a-z0-9]{4})$/i;
 
-export const regular = Regular.or(removeSubByUrlReg, removeByIdReg, removeRepoPoolRegex);
+export const regular = Regular.or(
+    removeSubByUrlReg,
+    removeByIdReg,
+    removeRepoFromPoolRegex,
+    removeRepoFromPoolByIdRegex
+);
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
@@ -45,7 +51,7 @@ export default onResponse(selects, async e => {
             const chatId = e.SpaceId;
             if (repoUrl) {
                 const subsData = await SubscriptionService.getSubDataBySpaceID(chatId);
-                const toRemoveSubId = subsData.find(sub => sub.repoUrl === repoUrl)?.id;
+                const toRemoveSubId = subsData.find(sub => sub.repoUrl === repoUrl)?.SubId;
                 const removed = await SubscriptionService.removeSubscription(toRemoveSubId);
                 if (removed) {
                     logger.info('已成功删除repo：', repoUrl);
@@ -71,7 +77,7 @@ export default onResponse(selects, async e => {
             const chatId = e.OpenId;
             if (repoUrl) {
                 const subsData = await SubscriptionService.getSubDataByOpenID(chatId);
-                const toRemoveSubId = subsData.find(sub => sub.repoUrl === repoUrl)?.id;
+                const toRemoveSubId = subsData.find(sub => sub.repoUrl === repoUrl)?.SubId;
                 const removed = await SubscriptionService.removeSubscription(toRemoveSubId);
                 if (removed) {
                     logger.info('已成功删除repo：', repoUrl);
@@ -169,26 +175,54 @@ export default onResponse(selects, async e => {
         }
     }
 
-    /**从仓库池删除repo */
-    if (removeRepoPoolRegex.test(e.MessageText)) {
+    /**从仓库池删除对应url的repo */
+    if (removeRepoFromPoolRegex.test(e.MessageText)) {
         if (
             !(
                 PermissionService.isOwner(e) ||
                 PermissionService.checkPermission(e.UserKey, e.SpaceId, Action.manage_repo_pool)
             )
         ) {
-            message.send(format(Text('只有主人或管理员可以添加仓库池')));
+            message.send(format(Text('只有主人或管理员可以删除仓库池仓库')));
             return;
         }
         const repoUrl = extractRepoUrl(e.MessageText);
-        if (repoUrl && (await SubscriptionService.hasRepo(repoUrl))) {
-            if (await SubscriptionService.removeRepo(repoUrl)) {
-                message.send(format(Text(`删除仓库池成功：${repoUrl}`)));
+        if (repoUrl && (await SubscriptionService.hasPoolRepoByUrl(repoUrl))) {
+            if (await SubscriptionService.removePoolRepo(repoUrl)) {
+                message.send(format(Text(`从仓库池删除repo成功：${repoUrl}`)));
             } else {
-                message.send(format(Text(`删除仓库池失败：${repoUrl}`)));
+                message.send(format(Text(`从仓库池删除repo失败：${repoUrl}`)));
             }
         } else {
-            message.send(format(Text(`仓库池不存在：${repoUrl}`)));
+            message.send(format(Text(`仓库池无该repo：${repoUrl}`)));
+        }
+    }
+    /**从仓库池删除对应索引id的repo */
+    if (removeRepoFromPoolByIdRegex.test(e.MessageText)) {
+        if (
+            !(
+                PermissionService.isOwner(e) ||
+                PermissionService.checkPermission(e.UserKey, e.SpaceId, Action.manage_repo_pool)
+            )
+        ) {
+            message.send(format(Text('只有主人或管理员可以删除仓库池索引仓库')));
+            return;
+        }
+        const match = e.MessageText.match(removeRepoFromPoolByIdRegex);
+        if (match && match[3]) {
+            const repoId = match[3];
+            if (await SubscriptionService.hasPoolRepoById(repoId)) {
+                const repoUrl = await SubscriptionService.getPoolRepoUrlById(repoId);
+                if (await SubscriptionService.removePoolRepo(repoUrl)) {
+                    message.send(format(Text(`从仓库池删除repo成功：${repoUrl}`)));
+                } else {
+                    message.send(format(Text(`从仓库池删除repo失败：${repoUrl}`)));
+                }
+            } else {
+                message.send(format(Text(`仓库池无该索引号：${repoId}`)));
+            }
+        } else {
+            message.send(format(Text('⚠ 无效的仓库池索引号')));
         }
     }
     return;

@@ -7,12 +7,16 @@ import PermissionService, { Action, SubscriptionPool } from '@src/models/github.
 import { Text, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
-const addSubRegex =
-    /^([!！/])?(添加|订阅|add)(本聊天)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)?\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
-const addRepoPoolRegex =
-    /^([!！/])?(添加|订阅|add)(仓库池|github仓库池|GitHub代码仓库池)\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
+const addSubByUrlRegex =
+    /^([!！/])?(订阅仓库|sub|SUB|codes-sub|codes-s)?\s*(https?:\/\/)?(www.)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
 
-export const regular = Regular.or(addSubRegex, addRepoPoolRegex);
+const addSubByRepoIdRegex =
+    /^(!|！|\/)?(订阅索引仓库|sub-index-pool|subRepoId|subrepoid|sub-repo-id|SUBREPOID|SUB-REPO-ID|codesrid-sub|codesrid-s)\s*([a-z0-9]{4})$/i;
+
+const addRepoPoolRegex =
+    /^([!！/])?(添加仓库池|addpool|ADDPOOL|add-pool|Add-Pool|ADDPOOL|ADD-POOL|codep-add|codep-a)\s*(https?:\/\/)?(www.)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+/;
+
+export const regular = Regular.or(addSubByUrlRegex, addSubByRepoIdRegex, addRepoPoolRegex);
 
 function extractRepoUrl(text: string): string | null {
     const match = text.trim().match(/(github\.com\/)?([a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+)/);
@@ -27,8 +31,10 @@ export default onResponse(selects, async e => {
         return;
     }
 
-    /**添加订阅 */
-    if (addSubRegex.test(e.MessageText)) {
+    /**
+     * 通过仓库url订阅仓库到聊天
+     */
+    if (addSubByUrlRegex.test(e.MessageText)) {
         // 群聊添加订阅
         if (e.name === 'message.create' && e.MessageId) {
             if (
@@ -42,15 +48,13 @@ export default onResponse(selects, async e => {
             }
             const repoUrl = extractRepoUrl(e.MessageText);
             const chatId = e.SpaceId;
-            if (repoUrl && (await SubscriptionService.hasRepo(repoUrl))) {
-                if (await SubscriptionService.addSubscription(SubscriptionPool.Group, chatId, repoUrl, e.UserKey)) {
+            if (repoUrl) {
+                if (await SubscriptionService.addSubscription(SubscriptionPool.Group, chatId, e.UserKey, repoUrl)) {
                     message.send(format(Text(`订阅成功：${repoUrl}`)));
                 } else {
                     message.send(format(Text(`该群聊已经订阅过该仓库：${repoUrl}`)));
                     return;
                 }
-            } else if (repoUrl && !(await SubscriptionService.hasRepo(repoUrl))) {
-                message.send(format(Text('请先联系管理员添加该仓库地址到仓库池，再群聊添加订阅')));
             } else {
                 message.send(format(Text('请输入正确的GitHub仓库地址')));
             }
@@ -70,14 +74,12 @@ export default onResponse(selects, async e => {
             }
             const repoUrl = extractRepoUrl(e.MessageText);
             const chatId = e.OpenId;
-            if (repoUrl && (await SubscriptionService.hasRepo(repoUrl))) {
-                if (await SubscriptionService.addSubscription(SubscriptionPool.Private, chatId, repoUrl, e.UserKey)) {
+            if (repoUrl) {
+                if (await SubscriptionService.addSubscription(SubscriptionPool.Private, chatId, e.UserKey, repoUrl)) {
                     message.send(format(Text(`订阅成功：${repoUrl}`)));
                 } else {
                     message.send(format(Text(`该聊天你已经订阅过该仓库：${repoUrl}`)));
                 }
-            } else if (repoUrl && !(await SubscriptionService.hasRepo(repoUrl))) {
-                message.send(format(Text('请先联系管理员添加该仓库地址到仓库池，再私聊添加订阅')));
             } else {
                 message.send(format(Text('请输入正确的GitHub仓库地址')));
             }
@@ -85,7 +87,80 @@ export default onResponse(selects, async e => {
         }
     }
 
-    /**添加仓库池 */
+    /**
+     * 通过仓库索引id订阅仓库到聊天
+     */
+    if (addSubByRepoIdRegex.test(e.MessageText)) {
+        const match = e.MessageText.match(addSubByRepoIdRegex);
+        // 群聊
+        if (e.name === 'message.create' && e.MessageId) {
+            if (
+                !(
+                    PermissionService.isOwner(e) ||
+                    PermissionService.checkPermission(e.UserKey, e.SpaceId, Action.manage_group_pool)
+                )
+            ) {
+                message.send(format(Text('只有主人或管理员可以添加订阅')));
+                return;
+            }
+            const chatId = e.SpaceId;
+            if (match && match[3]) {
+                const repoId = match[3];
+                if (await SubscriptionService.hasPoolRepoById(repoId)) {
+                    const repoUrl = await SubscriptionService.getPoolRepoUrlById(repoId);
+                    if (
+                        repoUrl &&
+                        (await SubscriptionService.addSubscription(SubscriptionPool.Group, chatId, e.UserKey, repoUrl))
+                    ) {
+                        message.send(format(Text(`订阅成功：${repoUrl}`)));
+                    } else {
+                        message.send(format(Text(`该群聊已经订阅过该仓库：${repoUrl}`)));
+                    }
+                } else {
+                    message.send(format(Text(`没有找到该仓库索引：${repoId}`)));
+                }
+            }
+            return;
+        }
+        // 私聊
+        if (e.name === 'private.message.create' && e.MessageId) {
+            if (
+                !(
+                    PermissionService.isOwner(e) ||
+                    !PermissionService.checkPermission(e.UserKey, e.ChatId, Action.manage_private_pool)
+                )
+            ) {
+                message.send(format(Text('只有主人或被授权的白名单用户可以私聊添加订阅')));
+                return;
+            }
+            const chatId = e.OpenId;
+            if (match && match[3]) {
+                const repoId = match[3];
+                if (await SubscriptionService.hasPoolRepoById(repoId)) {
+                    const repoUrl = await SubscriptionService.getPoolRepoUrlById(repoId);
+                    if (
+                        repoUrl &&
+                        (await SubscriptionService.addSubscription(
+                            SubscriptionPool.Private,
+                            chatId,
+                            e.UserKey,
+                            repoUrl
+                        ))
+                    ) {
+                        message.send(format(Text(`订阅成功：${repoUrl}`)));
+                    } else {
+                        message.send(format(Text(`该群聊已经订阅过该仓库：${repoUrl}`)));
+                    }
+                } else {
+                    message.send(format(Text(`没有找到该仓库索引：${repoId}`)));
+                }
+            }
+            return;
+        }
+        return;
+    }
+
+    /**添加url到仓库池，并建立索引id */
     if (addRepoPoolRegex.test(e.MessageText)) {
         if (
             !(
@@ -97,12 +172,15 @@ export default onResponse(selects, async e => {
             return;
         }
         const repoUrl = extractRepoUrl(e.MessageText);
-        if (repoUrl && !(await SubscriptionService.hasRepo(repoUrl))) {
-            if (await SubscriptionService.addRepo(repoUrl)) {
-                message.send(format(Text(`添加仓库池成功：${repoUrl}`)));
+        if (repoUrl && !(await SubscriptionService.hasPoolRepoByUrl(repoUrl))) {
+            if (await SubscriptionService.addRepoToPool(repoUrl)) {
+                const repoId = await SubscriptionService.getPoolRepoIdByUrl(repoUrl);
+                message.send(format(Text(`添加到仓库池成功：\n索引id : repoURL\n${repoId} : ${repoUrl}`)));
             } else {
-                message.send(format(Text(`添加仓库池失败：${repoUrl}`)));
+                message.send(format(Text(`添加到仓库池失败：${repoUrl}`)));
             }
+        } else if (repoUrl && (await SubscriptionService.hasPoolRepoByUrl(repoUrl))) {
+            message.send(format(Text(`该仓库已添加到仓库池`)));
         }
     }
 });

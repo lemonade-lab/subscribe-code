@@ -4,8 +4,8 @@ import PermissionService, { Action } from '@src/models/github.sub.permissoin';
 import { Text, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
-export const pauseAllReg = /^(!|！|\/)?(暂停|停止|关闭)本聊天所有(仓库|github仓库|GitHub仓库|GitHub代码仓库)推送$/;
-const pauseByIdReg = /^(!|！|\/)?(暂停|停止|关闭)编号仓库\s*([a-z0-9]{8})$/i;
+const pauseAllReg = /^(!|！|\/)?(暂停推送|停止推送|关闭推送|codes-stop)$/;
+const pauseByIdReg = /^(!|！|\/)?(暂停推送编号|停止推送编号|关闭推送编号|codessid-stop)\s*([a-z0-9]{8})$/i;
 
 export const regular = Regular.or(pauseAllReg, pauseByIdReg);
 
@@ -68,9 +68,9 @@ export default onResponse(selects, async e => {
                     const isPaused = await SubscriptionService.disableSubscription(subId);
                     logger.info(`停用编号订阅 ${subId}: ${isPaused}`);
                     if (isPaused === true) {
-                        message.send(format(Text(`成功暂停本聊天的该订阅：${subId}`)));
+                        message.send(format(Text(`成功暂停该订阅：${subId}`)));
                     } else {
-                        message.send(format(Text(`暂停本聊天的该订阅失败：${subId}`)));
+                        message.send(format(Text(`暂停该订阅失败：${subId}`)));
                         return;
                     }
                 } else {

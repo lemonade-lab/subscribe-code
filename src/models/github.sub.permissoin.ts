@@ -25,8 +25,15 @@ export enum ChatType {
     Private = 'private.message.create'
 }
 
+export interface RepoPoolItem {
+    repoId: string; // 唯一编号 (如 UUID 或自增ID)
+    repoUrl: string; // 仓库URL
+    createdAt: Date; // 添加时间
+}
+
 export interface Subscription {
-    id: string;
+    repoId: string;
+    SubId: string; //绑定编号
     poolType: SubscriptionPool;
     chatId: string;
     repoUrl: string;

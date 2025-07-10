@@ -9,13 +9,14 @@ import PermissionService, {
 import { Text, useMessage } from 'alemonjs';
 import { Regular } from 'alemonjs/utils';
 
-const listRepoReg = /^(!|！|\/)?(本聊天)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)列表$/;
-const listAllRepoReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库)全部列表$/;
-const viewRepoPoolReg = /^(!|！|\/)?(仓库|github仓库|GitHub仓库|GitHub代码仓库|repo)池列表$/;
+const listRepoReg = /^(!|！|\/)?(订阅列表|codes-list|codes-l)$/;
+const listAllRepoReg = /^(!|！|\/)?(全部订阅列表|codesg-list|codesg-l)$/;
+const viewRepoPoolReg = /^(!|！|\/)?(仓库池列表|codep-list|codep-l)$/;
 const checkRepoReg =
-    /^(!|！|\/)?检查(仓库|github仓库|GitHub仓库|GitHub代码仓库)\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
+    /^(!|！|\/)?(检查仓库|codes-check|codes-c)\s*(https?:\/\/)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
+const checkByRepoIdReg = /^(!|！|\/)?(检查索引仓库|codesrid-check|codesrid-c)\s*([a-z0-9]{4})$/i;
 
-export const regular = Regular.or(listRepoReg, listAllRepoReg, viewRepoPoolReg, checkRepoReg);
+export const regular = Regular.or(listRepoReg, listAllRepoReg, viewRepoPoolReg, checkRepoReg, checkByRepoIdReg);
 
 export default onResponse(selects, async e => {
     const [message] = useMessage(e);
@@ -40,12 +41,14 @@ export default onResponse(selects, async e => {
             const lines: string[] = [];
             for (const sub of subs) {
                 const used = usedAll ? (sub.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
-                lines.push(`${used} ${sub.id}：${sub.repoUrl}`);
+                lines.push(`${used} ${sub.SubId} : ${sub.repoUrl}`);
             }
             lines.push(`\n⚠：暂停推送，✅：正常推送`);
             message.send(
                 format(
-                    Text(`👪本聊天${chatStatus}订阅的GitHub仓库列表：\n\n${lines.length ? lines.join('\n') : '无订阅'}`)
+                    Text(
+                        `👪本聊天${chatStatus}订阅的GitHub仓库列表：\n\n< subId : repoUrl >\n\n${lines.length ? lines.join('\n') : '无订阅'}`
+                    )
                 )
             );
         }
@@ -62,11 +65,15 @@ export default onResponse(selects, async e => {
             const lines: string[] = [];
             for (const sub of subs) {
                 const used = usedAll ? (sub.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
-                lines.push(`${used} ${sub.id}：${sub.repoUrl}`);
+                lines.push(`${used} ${sub.SubId} : ${sub.repoUrl}`);
             }
             lines.push(`\n⚠：暂停推送，✅：正常推送`);
             message.send(
-                format(Text(`🧑你${chatStatus}订阅的GitHub仓库列表：\n\n${lines.length ? lines.join('\n') : '无订阅'}`))
+                format(
+                    Text(
+                        `🧑你${chatStatus}订阅的GitHub仓库列表：\n\n< subId : repoUrl >\n\n${lines.length ? lines.join('\n') : '无订阅'}`
+                    )
+                )
             );
         }
         return;
@@ -88,15 +95,15 @@ export default onResponse(selects, async e => {
             logger.info('执行查看全部仓库订阅');
             const groupSubs = await SubscriptionService.getSubscriptionsByPoolType(SubscriptionPool.Group);
             if (groupSubs.length !== 0) {
-                msgs.push(`--------------------\n👪群聊订阅：`);
+                msgs.push(`────────────────\n👪群聊订阅：\n\n< subId : repoUrl >\n\n`);
                 for (const sub of groupSubs) {
-                    const forEachGroupSubs = groupSubs.filter(item => item.id === sub.id);
+                    const forEachGroupSubs = groupSubs.filter(item => item.SubId === sub.SubId);
                     const usedAll = await SubscriptionService.isAllSubscriptionsEnabled(forEachGroupSubs);
                     const chatStatus = usedAll ? '✅' : '⚠';
                     const lines = await Promise.all(
                         forEachGroupSubs.map(async r => {
                             const used = usedAll ? (r.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
-                            return `${used} ${r.id}：${r.repoUrl}`;
+                            return `${used} ${r.SubId} : ${r.repoUrl}`;
                         })
                     );
                     msgs.push(`\n${sub.chatId}${chatStatus}：\n${lines.join('\n')}\n`);
@@ -104,15 +111,15 @@ export default onResponse(selects, async e => {
             }
             const privateSubs = await SubscriptionService.getSubscriptionsByPoolType(SubscriptionPool.Private);
             if (privateSubs.length !== 0) {
-                msgs.push(`--------------------\n🧑私聊订阅：`);
+                msgs.push(`────────────────\n🧑私聊订阅：\n\n< subId : repoUrl >\n\n`);
                 for (const sub of privateSubs) {
-                    const forEachPrivateSubs = groupSubs.filter(item => item.id === sub.id);
+                    const forEachPrivateSubs = groupSubs.filter(item => item.SubId === sub.SubId);
                     const usedAll = await SubscriptionService.isAllSubscriptionsEnabled(forEachPrivateSubs);
                     const chatStatus = usedAll ? '✅' : '⚠';
                     const lines = await Promise.all(
                         forEachPrivateSubs.map(async r => {
                             const used = usedAll ? (r.status === SubscriptionStatus.Enabled ? '✅' : '⚠') : '⚠';
-                            return `${used} ${r.id}：${r.repoUrl}`;
+                            return `${used} ${r.SubId} : ${r.repoUrl}`;
                         })
                     );
                     msgs.push(`\n${sub.chatId}${chatStatus}：\n${lines.join('\n')}\n`);
@@ -140,18 +147,18 @@ export default onResponse(selects, async e => {
             return;
         }
 
-        const msgs = [`📝仓库池列表：\n────────────────\n`];
+        const msgs = [`📝仓库池列表：\n────────────────\n< repoId : repoUrl >\n\n`];
         logger.info('执行查看仓库池');
-        const repoList = await SubscriptionService.listRepos();
+        const repoList = await SubscriptionService.listPoolRepos();
         if (repoList && repoList.length > 0) {
-            const lines = repoList.map(repo => `• ${repo}`);
+            const lines = repoList.map(repo => `${repo.repoId} : ${repo.repoUrl}`);
             msgs.push(lines.join('\n'));
         }
         message.send(format(Text(`${msgs.join('') || '仓库池为空'}`)));
         return;
     }
 
-    // 检查指定仓库是否已经订阅
+    // 检查指定url仓库是否已经订阅
     if (checkRepoReg.test(e.MessageText)) {
         const repoUrl = extractRepoUrl(e.MessageText);
         if (!repoUrl) {
@@ -167,14 +174,40 @@ export default onResponse(selects, async e => {
         }
 
         logger.info(`检查仓库 ${repoUrl} 是否在聊天 ${chatId} 中订阅`);
-        const subs = await SubscriptionService.getSubIdByRepo(repoUrl);
+        const subs = await SubscriptionService.getSubDataByRepo(repoUrl);
         const isSubscribed = subs.map(sub => sub.chatId).includes(chatId);
 
         if (isSubscribed) {
-            message.send(format(Text(`仓库 ${repoUrl} 在本聊天中已订阅`)));
+            const repoId = await SubscriptionService.getPoolRepoIdByUrl(repoUrl);
+            message.send(format(Text(`仓库在本聊天中已订阅：\n\n✅${repoId} : ${repoUrl}`)));
         } else {
-            message.send(format(Text(`仓库 ${repoUrl} 未在本聊天中订阅`)));
+            message.send(format(Text(`仓库未在本聊天中订阅：\n\n❌${repoUrl}`)));
         }
         return;
+    }
+
+    // 检查指定索引id的仓库是否已经订阅
+    if (checkByRepoIdReg.test(e.MessageText)) {
+        const repoId = e.MessageText.match(checkByRepoIdReg)[3];
+        let chatId: string;
+        if (e.name === 'message.create') {
+            chatId = e.SpaceId;
+        } else if (e.name === 'private.message.create') {
+            chatId = e.OpenId;
+        }
+        logger.info(`检查索引仓库 ${repoId} 是否在聊天 ${chatId} 中订阅`);
+        if (repoId) {
+            const repoUrl = await SubscriptionService.getPoolRepoUrlById(repoId);
+            const subs = await SubscriptionService.getSubDataByRepo(repoUrl);
+            const isSubscribed = subs.map(sub => sub.chatId).includes(chatId);
+
+            if (isSubscribed) {
+                message.send(format(Text(`仓库在本聊天中已订阅：\n\n✅${repoId} : ${repoUrl}`)));
+            } else {
+                message.send(format(Text(`仓库未在本聊天中订阅：\n\n❌${repoId} : ${repoUrl}`)));
+            }
+        } else {
+            message.send(format(Text('索引仓库不存在，请输入正确的索引id')));
+        }
     }
 });
