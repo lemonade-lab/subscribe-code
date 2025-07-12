@@ -1,4 +1,4 @@
-import { alemonjsCodeVersion } from '@src/models/config.js';
+import { alemonjsCodeVersion, appName } from '@src/models/config.js';
 import { BackgroundImage } from 'jsxp';
 import React from 'react';
 import HTML from './HTML.js';
@@ -21,7 +21,7 @@ function Help({ data, theme = 'dark' }: PropsType) {
                 <div className="min-h-4"></div>
                 <div className="bg-blue-200 bg-opacity-50 border-2 border-pink-400 px-4 pb-2 rounded-md flex justify-center items-center flex-col gap-0.5">
                     <div className="bg-pink-100 bg-opacity-60 text-pink-600 text-2xl px-6 py-2 rounded-2xl border border-pink-400 shadow font-bold text-center mt-4 mb-2">
-                        alemonjs-code帮助
+                        CODE-HELP
                     </div>
                     <div className="flex flex-col w-full gap-2 mb-3 overflow-visible relative">
                         {data.map((val, index) => (
@@ -54,7 +54,7 @@ function Help({ data, theme = 'dark' }: PropsType) {
                             </div>
                         ))}
                         <div className="text-center text-sm text-gray-700 mt-2">
-                            Created By -<span className="font-bold text-black-600"> alemonjs-code </span>- v
+                            Created By -<span className="font-bold text-black-600"> {appName} </span>- v
                             <span className="italic">{alemonjsCodeVersion}</span>
                         </div>
                     </div>
