@@ -90,7 +90,7 @@ yarn app --login onebot
 > 当前仅仅支持运行在onebot协议
 > 需与配置Github Webhook部分配合使用。
 
-- 启动bot后，在群聊/私聊中发送指令
+- 启动bot后，在群聊/私聊中发送指令 `/codeh` `/code-help`
 
 ## 四、🎈连接说明
 
