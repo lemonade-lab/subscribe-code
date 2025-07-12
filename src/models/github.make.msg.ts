@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 /**
  * 格式化 GitHub 事件消息
@@ -6,7 +6,7 @@ import moment from 'moment';
  * @param payload - 事件的负载数据
  * @returns 格式化后的消息字符串或 null
  */
-export function formatGithubEvent(event: string, payload: any): string | null {
+export function formatGithubEvent(event: string, payload: GithubEventPayload): string | null {
     if (!payload) return null;
 
     // 通用分隔线
@@ -21,7 +21,7 @@ export function formatGithubEvent(event: string, payload: any): string | null {
             const compareUrl = payload.compare;
             const commits = payload.commits || [];
             const headCommit = payload.head_commit || {};
-            const time = headCommit.timestamp ? moment(headCommit.timestamp).format('YYYY-MM-DD HH:mm:ss') : '';
+            const time = headCommit.timestamp ? dayjs(headCommit.timestamp).format('YYYY-MM-DD HH:mm:ss') : '';
 
             const message = [
                 `🚀 GitHub 推送事件`,
@@ -35,15 +35,24 @@ export function formatGithubEvent(event: string, payload: any): string | null {
             ];
 
             // 展示前3条提交（QQ消息不宜过长）
-            commits.slice(0, 3).forEach((commit: any, idx: number) => {
-                message.push(
-                    `✨ 提交 #${idx + 1}`,
-                    `  信息：${commit.message.split('\n')[0]}`,
-                    `  作者：${commit.author?.name}`,
-                    `  链接：${commit.url}`,
-                    SEPARATOR
-                );
-            });
+            commits.slice(0, 3).forEach(
+                (
+                    commit: {
+                        message: string;
+                        author?: { name?: string };
+                        url?: string;
+                    },
+                    idx: number
+                ) => {
+                    message.push(
+                        `✨ 提交 #${idx + 1}`,
+                        `  信息：${commit.message.split('\n')[0]}`,
+                        `  作者：${commit.author?.name}`,
+                        `  链接：${commit.url}`,
+                        SEPARATOR
+                    );
+                }
+            );
 
             if (commitCount > 3) {
                 message.push(`...等共 ${commitCount} 条提交`, `🔍 完整变更：${compareUrl}`);
@@ -144,4 +153,24 @@ export function formatGithubEvent(event: string, payload: any): string | null {
             return null;
     }
     return null;
+}
+
+/**
+ * GitHub 事件的负载数据类型
+ */
+export interface GithubEventPayload {
+    repository?: { full_name?: string };
+    pusher?: { name?: string };
+    ref?: string;
+    ref_type?: string;
+    commits?: Array<{ message: string; author?: { name?: string }; url?: string }>;
+    head_commit?: { timestamp?: string };
+    compare?: string;
+    issue?: { number?: number; title?: string; user?: { login?: string }; html_url?: string };
+    action?: string;
+    comment?: { body?: string; user?: { login?: string }; html_url?: string };
+    pull_request?: { number?: number; title?: string; user?: { login?: string }; html_url?: string };
+    body?: string;
+    user?: { login?: string };
+    html_url?: string;
 }

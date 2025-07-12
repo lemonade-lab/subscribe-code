@@ -1,8 +1,7 @@
 import { formatGithubEvent } from '@src/models/github.make.msg';
 import { sendMessage } from '@src/models/github.push.api';
-import SubscriptionService from '@src/models/github.sub.operation';
-import { SubscriptionStatus } from '@src/models/github.sub.permissoin';
-import { keyHashData } from '@src/utils/config';
+import { keyHashData } from '@src/models/config';
+import * as CodeData from '@src/models/code.data';
 import chalk from 'chalk';
 import crypto from 'crypto';
 import os from 'os';
@@ -95,7 +94,8 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                     logger.info(chalk.bgGray.black('[WebSocket Client]'), chalk.gray('事件未生成消息，已忽略'));
                     return;
                 }
-                const subs = await SubscriptionService.getSubIdByRepo(repo);
+                const [belong, name] = repo.split('/');
+                const subs = await CodeData.findByRepo('github.com', belong, name);
                 if (!subs || subs.length === 0) {
                     logger.info(
                         chalk.bgYellow.black('[WebSocket Client]'),
@@ -105,26 +105,6 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                     return;
                 }
                 for (const sub of subs) {
-                    const subId = sub.id;
-                    if (!SubscriptionService.isAllSubscriptionsEnabled(subs.filter(s => s.id === subId))) {
-                        logger.info(
-                            chalk.bgYellow.black('[WebSocket Client]'),
-                            chalk.yellow('该聊天的推送已暂停，跳过发送：'),
-                            `[${sub.poolType}] [${sub.chatId}]`,
-                            chalk.gray(repo)
-                        );
-                        continue;
-                    }
-                    if (sub.status === SubscriptionStatus.Disabled) {
-                        logger.info(
-                            chalk.bgYellow.black('[WebSocket Client]'),
-                            chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
-                            `[${sub.poolType}] [${sub.chatId}] [${subId}]`,
-                            chalk.gray(repo)
-                        );
-                        continue;
-                    }
-
                     logger.info(
                         chalk.bgGreen.black('[WebSocket Client]'),
                         chalk.green('发送消息:'),
@@ -132,7 +112,11 @@ export const WebsokcetClient = async (options: { wsServerUrl?: string; wsSecret?
                         chalk.green('from repo:'),
                         chalk.bold(repo)
                     );
-                    await sendMessage(sub.poolType, sub.chatId, message);
+                    await sendMessage(
+                        sub.type === 'g' ? 'message.create' : 'private.message.create',
+                        sub.chatId,
+                        message
+                    );
                 }
             } catch (e) {
                 logger.error('[WebSocket Client] 消息处理异常:', e);

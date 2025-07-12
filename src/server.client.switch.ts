@@ -1,4 +1,4 @@
-import { enhancedConfigUpdate, getCodeConfig } from '@src/utils/config';
+import { getCodeConfig, setCodeConfig } from '@src/models/config';
 import { WebhookWebsocketServer } from '@src/webhook.websocket.server';
 import { WebsokcetClient } from '@src/websocket.client';
 import chalk from 'chalk';
@@ -10,7 +10,7 @@ import crypto from 'crypto';
 
 const config = getCodeConfig();
 
-let WS_SECRET: string = config?.ws_secret || '';
+const WS_SECRET: string = config?.ws_secret || '';
 
 const WS_SERVER_URL: string | null | undefined = config?.ws_server_url;
 
@@ -25,7 +25,7 @@ if (!WS_SERVER_URL) {
             `请确保 GitHub 官网仓库的 Webhook 配置中设置的 Secret 与本项目的配置中的相同Secret相同，否则无法接收到来自 GitHub 的 Webhook 事件。`
         );
         GITHUB_SECRET = randomBytes;
-        enhancedConfigUpdate('alemonjs-code', { github_secret: GITHUB_SECRET });
+        setCodeConfig('github_secret', GITHUB_SECRET);
     }
     logger.info(chalk.rgb(0, 190, 255)(`未配置 ws_server_url，webhook server本地模式 + websocket Server 模式开始加载`));
     WebhookWebsocketServer({

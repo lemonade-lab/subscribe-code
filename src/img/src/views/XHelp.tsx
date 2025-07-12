@@ -1,4 +1,4 @@
-import { alemonjsCodeVersion } from '@src/utils/config';
+import { alemonjsCodeVersion } from '@src/models/config.js';
 import { BackgroundImage } from 'jsxp';
 import React from 'react';
 import HTML from './HTML.js';
@@ -6,7 +6,7 @@ import HTML from './HTML.js';
 type PropsType = {
     theme?: string;
     data: {
-        group: string;
+        title: string;
         list: {
             title: string;
             desc: string;
@@ -33,7 +33,7 @@ function Help({ data, theme = 'dark' }: PropsType) {
                                     {/* 左菱形 */}
                                     <span className="w-3 h-3 bg-pink-200 border border-pink-400 rotate-45 mr-2 block"></span>
                                     <span className="bg-pink-100 bg-opacity-60 text-pink-600 text-sm px-4 py-1 rounded-2xl border border-pink-400 shadow">
-                                        {val.group}
+                                        {val.title}
                                     </span>
                                     {/* 右菱形 */}
                                     <span className="w-3 h-3 bg-pink-200 border border-pink-400 rotate-45 ml-2 block"></span>

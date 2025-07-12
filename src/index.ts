@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { alemonjsCodeVersion } from '@src/utils/config';
+import { alemonjsCodeVersion } from '@src/models/config';
 export default defineChildren({
     async onCreated() {
         /**

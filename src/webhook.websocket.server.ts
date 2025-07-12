@@ -1,8 +1,7 @@
-import { formatGithubEvent } from '@src/models/github.make.msg';
+import * as CodeData from '@src/models/code.data';
+import { formatGithubEvent, GithubEventPayload } from '@src/models/github.make.msg';
 import { sendMessage } from '@src/models/github.push.api';
-import SubscriptionService from '@src/models/github.sub.operation';
-import { SubscriptionStatus } from '@src/models/github.sub.permissoin';
-import { keyHashData } from '@src/utils/config';
+import { keyHashData } from '@src/models/config';
 import chalk from 'chalk';
 import crypto from 'crypto';
 import Koa from 'koa';
@@ -52,7 +51,7 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
             const rawBody = await getRawBody(ctx.req, { encoding: 'utf8' });
             ctx.request.rawBody = rawBody;
 
-            let payload: any;
+            let payload: GithubEventPayload;
             const contentType = ctx.headers['content-type'] || '';
             try {
                 if (contentType.includes('application/json')) {
@@ -122,7 +121,9 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                 logger.info(chalk.bgGray.black('[GitHub Webhook]'), chalk.gray('事件未生成消息，已忽略'));
                 return;
             }
-            const subs = await SubscriptionService.getSubIdByRepo(repo);
+            // 查找所有订阅（只推送激活的）
+            const [belong, name] = repo.split('/');
+            const subs = await CodeData.findByRepo('github.com', belong, name, true); // 只查激活的
             if (!subs || subs.length === 0) {
                 ctx.status = 202;
                 ctx.body = { status: 'no subscription', message: 'bot未有任何聊天订阅该仓库，消息未发送' };
@@ -134,26 +135,6 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                 return;
             }
             for (const sub of subs) {
-                const subId = sub.id;
-                if (!SubscriptionService.isAllSubscriptionsEnabled(subs.filter(s => s.id === subId))) {
-                    logger.info(
-                        chalk.bgYellow.black('[GitHub Webhook]'),
-                        chalk.yellow('该聊天的推送已暂停，跳过发送：'),
-                        `[${sub.poolType}] [${sub.chatId}]`,
-                        chalk.gray(repo)
-                    );
-                    continue;
-                }
-                if (sub.status === SubscriptionStatus.Disabled) {
-                    logger.info(
-                        chalk.bgYellow.black('[GitHub Webhook]'),
-                        chalk.yellow('该编号仓库推送已暂停，跳过发送：'),
-                        `[${sub.poolType}] [${sub.chatId}] [${subId}]`,
-                        chalk.gray(repo)
-                    );
-                    continue;
-                }
-
                 logger.info(
                     chalk.bgGreen.black('[GitHub Webhook]'),
                     chalk.green('发送消息:'),
@@ -161,7 +142,7 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                     chalk.green('from repo:'),
                     chalk.bold(repo)
                 );
-                await sendMessage(sub.poolType, sub.chatId, message);
+                await sendMessage(sub.type === 'g' ? 'message.create' : 'private.message.create', sub.chatId, message);
             }
 
             // 2. 广播转发
@@ -198,20 +179,21 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
 
     // WS转发服务端
     const wss = new WebSocketServer({ server });
-    wss.on('connection', ws => {
+    wss.on('connection', w => {
         const challenge = crypto.randomUUID();
         let authed = false;
         let clientId: string | undefined = undefined;
         let timeout: NodeJS.Timeout;
+        const curWs = w as WebSocket & { clientId?: string };
 
         /*
          * 已配置 wsSecret 时，下发 wsSecret 认证 challenge，客户端必须通过 wsSecret 认证后方可连接
          */
         if (WS_SECRET) {
-            ws.send(JSON.stringify({ type: 'challenge', challenge }));
+            curWs.send(JSON.stringify({ type: 'challenge', challenge }));
         }
 
-        ws.on('message', msg => {
+        curWs.on('message', msg => {
             try {
                 const data = JSON.parse(msg.toString());
                 if (!authed && WS_SECRET) {
@@ -224,9 +206,9 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                                 .update(data.fingerPrint)
                                 .digest('hex')
                                 .substring(0, 6);
-                            (ws as any).clientId = clientId;
-                            clients.add(ws);
-                            ws.send(JSON.stringify({ type: 'clientId', clientId }));
+                            curWs.clientId = clientId;
+                            clients.add(curWs);
+                            curWs.send(JSON.stringify({ type: 'clientId', clientId }));
                             logger.info(
                                 chalk.bgGreen.black('[WebSocket]'),
                                 chalk.green('认证通过，分配客户端Id:'),
@@ -242,32 +224,32 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                                 clients.size
                             );
                         } else {
-                            ws.send(JSON.stringify({ type: 'error', message: 'ws_secret 签名校验失败' }));
+                            curWs.send(JSON.stringify({ type: 'error', message: 'ws_secret 签名校验失败' }));
                             logger.error(
                                 chalk.bgRed.white('[WebSocket]'),
                                 chalk.red('ws_secret 签名校验失败，已断开连接。')
                             );
-                            ws.close();
+                            curWs.close();
                         }
                     } else {
                         logger.error(`ws auth error: ${msg.toString()}`);
-                        ws.close();
+                        curWs.close();
                     }
                     return;
                 } else if (!authed && !WS_SECRET) {
                     authed = true;
                     clientId = crypto.createHash('sha256').update(data.fingerPrint).digest('hex');
-                    (ws as any).clientId = clientId;
-                    clients.add(ws);
-                    ws.send(JSON.stringify({ type: 'clientId', clientId }));
+                    curWs.clientId = clientId;
+                    clients.add(curWs);
+                    curWs.send(JSON.stringify({ type: 'clientId', clientId }));
                 }
             } catch {
-                ws.close();
+                curWs.close();
             }
         });
 
-        ws.on('close', err => {
-            clients.delete(ws);
+        curWs.on('close', err => {
+            clients.delete(curWs);
             clearTimeout(timeout);
             logger.warn(
                 chalk.bgRed.white('[WebSocket]'),
@@ -276,8 +258,8 @@ export const WebhookWebsocketServer = async (options: { port?: number; githubSec
                 err
             );
         });
-        ws.on('error', err => {
-            clients.delete(ws);
+        curWs.on('error', err => {
+            clients.delete(curWs);
             clearTimeout(timeout);
             logger.error(
                 chalk.bgRed.white('[WebSocket]'),
