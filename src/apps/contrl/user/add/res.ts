@@ -2,7 +2,7 @@ import vPlatform, { selects } from '@src/apps/index';
 import { useMention, useMessage, ResultCode, Text } from 'alemonjs';
 import { addWhiteUser, isCodeMastet, isMaster, isWhiteUser } from '@src/models/config';
 
-export const regular = /^^(\/code|!|！)u\s+add/;
+export const regular = /^(\/code|!|！)u\s+add/;
 
 const res = onResponse(selects, async e => {
     const [message] = useMessage(e);

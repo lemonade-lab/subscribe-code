@@ -3,7 +3,7 @@ import { useMention, useMessage, ResultCode, Text } from 'alemonjs';
 import { removeWhiteUser, isWhiteUser, isMaster, isCodeMastet } from '@src/models/config';
 
 // 删除 code w user 身份
-export const regular = /^^(\/code|!|！)u\s+add/;
+export const regular = /^(\/code|!|！)u\s+add/;
 
 const res = onResponse(selects, async e => {
     const [message] = useMessage(e);

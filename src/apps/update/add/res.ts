@@ -5,12 +5,19 @@ import * as CodeData from '@src/models/code.data';
 import { isCodeMastet, isMaster, isWhiteUser } from '@src/models/config';
 
 export const regular =
-    /^(\/code|!|！)\s+add\s+(-g\s+)?(https?:\/\/)?(www\.)?(github\.com\/)?[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+(\s+-g)?(\s|$)/;
+    /^(\/code|!|！)\s+add\s+(-g\s+)?(https?:\/\/)?(www\.)?(github\.com\/)?([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)(\s+-g)?(\s|$)/;
 
 const extractRepoParts = (text: string): { origin: string; belong: string; name: string } | null => {
-    const match = text.trim().match(/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/);
+    // 匹配完整URL或简短格式
+    const match = text.trim().match(/(?:https?:\/\/(?:www\.)?(github\.com)\/)?([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/);
+
     if (!match) return null;
-    return { origin: 'github.com', belong: match[1], name: match[2] };
+
+    return {
+        origin: match[1] || 'github.com', // 提取域名或默认github.com
+        belong: match[2], // 用户/组织名
+        name: match[3] // 仓库名
+    };
 };
 
 const res = onResponse(selects, async e => {
