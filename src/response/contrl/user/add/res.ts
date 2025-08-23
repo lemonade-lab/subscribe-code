@@ -7,7 +7,7 @@ export const regular = /^(\/code|!|！)u\s+add/;
 const res = onResponse(selects, async e => {
     const [message] = useMessage(e);
     // 需要是 主人 / 管理员
-    if (!isMaster(e.UserKey, e.UserId) && !isCodeMastet(e.UserKey, e.UserId)) {
+    if (!isMaster(e.UserKey, e.UserId) && !e.IsMaster && !isCodeMastet(e.UserKey, e.UserId)) {
         message.send(format(Text('你没有权限执行此操作')));
         return;
     }

@@ -39,7 +39,7 @@ git clone -b release https://github.com/lemonade-lab/subscribe-code.git
 
 - 进入Github仓库，点击`Settings` -> `Webhooks` -> `Add webhook`
 
-- Payload URL： `http://[ip]:17117/apps/alemonjs-code/github/webhook`
+- Payload URL： `http://[ip]:17117/apps/alemonjs-code/api/github/webhook`
 
 > 旧版本，请使用 `http://[ip]:18666/github/webhook`
 
@@ -65,14 +65,10 @@ git clone -b release https://github.com/lemonade-lab/subscribe-code.git
 
 ```yaml
 port: 17117 # 对应端口
+master_id: null # 主人权限, 消息显示的的UserKey
 onebot:
     url: '' # 正向url
     token: '' # access_token
-    master_key: null # 主人权限, 消息显示的的UserKey
-alemonjs-code:
-    # 配置Github Webhook Secret
-    github_secret: 'subscribe-code' # Github Webhook Secret，需与Github Webhook配置时填写的一致
-    master_key: null # 主人权限, 消息显示的的UserKey
 ```
 
 > redis 使用默认配置，若修改，请阅读文档 @alemonjs/db
@@ -98,14 +94,14 @@ yarn app --login onebot
 
 在具有公网IP的服务器上，接收来自github webhook消息。
 
-- 配置文件`alemomn.config.yaml`：
+- 配置文件`alemomn.config.yaml`
 
 ```yaml
 alemonjs-code:
     github_secret: 'subscribe-code' # 需Github Webhook配置时填写的一致
+    # 以下配置已废弃，新版本不需要独立启动服务器
+    webhook_port: 18666 # Github Webhook服务端口
     ws_secret: 'subscribe-ws' # 密钥（选填，仅启服务器，不启机器人时可配）
-    # 以下配置已废弃，新版本需要需要独立启动服务器
-    webhook_port: 18666 # Github Webhook服务端口，与Github Webhook的url时填写的一致
 ```
 
 - 启动服务器和机器人

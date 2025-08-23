@@ -7,7 +7,7 @@ export const regular = /^(\/code|!|！)m\s+del/;
 
 const res = onResponse(selects, async e => {
     const [message] = useMessage(e);
-    if (!isMaster(e.UserKey, e.UserId)) {
+    if (!isMaster(e.UserKey, e.UserId) && !e.IsMaster) {
         return;
     }
     const [mention] = useMention(e);
