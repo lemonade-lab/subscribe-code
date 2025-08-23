@@ -1,6 +1,6 @@
 {
   "name": "alemonjs-code",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "仓库动态订阅",
   "author": "snowtafir, ningmengchongshui",
   "type": "module",
@@ -14,10 +14,7 @@
     "classnames": "^2.5.1",
     "dayjs": "^1.11.13",
     "jsxp": "1.2.2",
-    "koa": "^3.0.0",
-    "koa-router": "^13.0.1",
-    "raw-body": "^3.0.0",
-    "ws": "8.18.2"
+    "raw-body": "^3.0.0"
   },
   "peerDependencies": {
     "alemonjs": "^2.1.0-alpha.37"
