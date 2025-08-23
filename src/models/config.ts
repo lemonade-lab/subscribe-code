@@ -30,10 +30,11 @@ export const setCodeConfig = (key: string, value: string | number) => {
     config.saveValue(val);
 };
 
-export function isCodeMastet(userKey: string): boolean {
+export function isCodeMastet(userKey: string, userId: string): boolean {
     const value = getCodeConfig() || {};
     const masterKey = value?.master_key || [];
-    return masterKey.includes(userKey);
+    const masterUserId = value?.master_id || [];
+    return masterKey.includes(userKey) || masterUserId.includes(userId);
 }
 
 export function addCodeMaster(userKey: string): void {
@@ -92,10 +93,11 @@ export function removeWhiteUser(userKey: string) {
     }
 }
 
-export function isMaster(userKey: string): boolean {
+export function isMaster(userKey: string, userId: string): boolean {
     const value = getConfigValue() || {};
     const masterKey = value?.master_key || [];
-    return masterKey.includes(userKey);
+    const masterUserId = value?.master_id || [];
+    return masterKey.includes(userKey) || masterUserId.includes(userId);
 }
 
 /**

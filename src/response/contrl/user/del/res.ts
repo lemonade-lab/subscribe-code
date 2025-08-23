@@ -1,7 +1,8 @@
-import vPlatform, { selects } from '@src/apps/index';
+import vPlatform, { selects } from '@src/response/index';
 import { useMention, useMessage, ResultCode, Text } from 'alemonjs';
-import { addWhiteUser, isCodeMastet, isMaster, isWhiteUser } from '@src/models/config';
+import { removeWhiteUser, isWhiteUser, isMaster, isCodeMastet } from '@src/models/config';
 
+// 删除 code w user 身份
 export const regular = /^(\/code|!|！)u\s+add/;
 
 const res = onResponse(selects, async e => {
@@ -14,20 +15,19 @@ const res = onResponse(selects, async e => {
     const [mention] = useMention(e);
     const user = await mention.findOne();
     if (!user || user?.code !== ResultCode.Ok) {
-        message.send(format(Text('未找到用户信息')));
         return;
     }
     const userKey = user.data?.UserKey;
     if (!userKey) {
-        message.send(format(Text('未找到用户Key')));
         return;
     }
-    if (isWhiteUser(userKey)) {
-        message.send(format(Text('该用户已在白名单中')));
+    // 删除用户的 code w user 身份
+    if (!isWhiteUser(userKey)) {
+        message.send(format(Text('该用户不在白名单，无需删除')));
         return;
     }
-    addWhiteUser(userKey);
-    message.send(format(Text('已添加该用户为白名单用户')));
+    removeWhiteUser(userKey);
+    message.send(format(Text('已移除该用户的白名单身份')));
 });
 
 export default onResponse(selects, [vPlatform.current, res.current]);

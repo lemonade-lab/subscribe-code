@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "gui",
+            "name": "testone",
             "type": "node",
             "request": "launch",
-            "runtimeArgs": ["dev", "--login", "gui"],
+            "runtimeArgs": ["dev"],
             "runtimeExecutable": "yarn",
             "skipFiles": ["<node_internals>/**"]
         },

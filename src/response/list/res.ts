@@ -1,6 +1,6 @@
-import { selects } from '@src/apps/index';
+import { selects } from '@src/response/index';
 import { Text, useMessage } from 'alemonjs';
-import vPlatform from '@src/apps/index';
+import vPlatform from '@src/response/index';
 import { isCodeMastet, isMaster, isWhiteUser } from '@src/models/config';
 import * as CodeData from '@src/models/code.data';
 

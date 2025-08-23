@@ -1,7 +1,6 @@
 # Node dependencies
 node_modules
 /logs
-/gui
 /dist
 /lib
 *.log

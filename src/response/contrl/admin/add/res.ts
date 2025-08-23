@@ -1,13 +1,13 @@
-import vPlatform, { selects } from '@src/apps/index';
+import vPlatform, { selects } from '@src/response/index';
 import { useMention, useMessage } from 'alemonjs';
-import { removeCodeMaster, isCodeMastet, isMaster } from '@src/models/config';
+import { addCodeMaster, isCodeMastet, isMaster } from '@src/models/config';
 import { ResultCode, Text } from 'alemonjs';
 
-export const regular = /^(\/code|!|！)m\s+del/;
+export const regular = /^(\/code|!|！)m\s+add/;
 
 const res = onResponse(selects, async e => {
     const [message] = useMessage(e);
-    if (!isMaster(e.UserKey)) {
+    if (!isMaster(e.UserKey, e.UserId)) {
         return;
     }
     const [mention] = useMention(e);
@@ -21,12 +21,12 @@ const res = onResponse(selects, async e => {
         message.send(format(Text('未找到用户Key')));
         return;
     }
-    if (!isCodeMastet(userKey)) {
-        message.send(format(Text('该用户不是管理员，无需删除')));
+    if (isCodeMastet(userKey, e.UserId)) {
+        message.send(format(Text('该用户已是管理员')));
         return;
     }
-    removeCodeMaster(userKey);
-    message.send(format(Text('已移除该用户的管理员身份')));
+    addCodeMaster(userKey);
+    message.send(format(Text('已添加该用户为管理员')));
 });
 
 export default onResponse(selects, [vPlatform.current, res.current]);

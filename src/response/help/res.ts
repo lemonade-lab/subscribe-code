@@ -1,4 +1,4 @@
-import vPlatform, { selects } from '@src/apps/index';
+import vPlatform, { selects } from '@src/response/index';
 import { Image, Text, useMessage } from 'alemonjs';
 import Help from '@src/img/src/views/XHelp';
 import { renderComponentToBuffer } from 'jsxp';
