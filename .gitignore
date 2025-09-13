@@ -9,3 +9,4 @@ yarn.lock
 *.memory-card.json
 /.data
 /alemon*
+/gui

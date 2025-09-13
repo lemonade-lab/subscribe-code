@@ -32,7 +32,9 @@ git clone https://github.com/lemonade-lab/subscribe-code.git
 git clone -b release https://github.com/lemonade-lab/subscribe-code.git
 ```
 
-## 一、🍄配置Github Webhook
+## ⭐Github Webhook
+
+### 一、🍄配置Github Webhook
 
 > [!IMPORTANT]
 > 需后文bot指令订阅github仓库配合使用。
@@ -57,7 +59,7 @@ git clone -b release https://github.com/lemonade-lab/subscribe-code.git
 
 - 点击`Add webhook`
 
-## 二、🚀配置启动bot
+### 二、🚀配置启动bot
 
 文档： [https://alemonjs.com/](https://alemonjs.com/)
 
@@ -82,7 +84,7 @@ yarn dev --login onebot
 yarn app --login onebot
 ```
 
-## 三、🎒订阅githu仓库
+### 三、🎒订阅githu仓库
 
 > [!IMPORTANT]
 > 当前仅支持运行在onebot协议
@@ -90,7 +92,7 @@ yarn app --login onebot
 
 - 启动bot后，在群聊/私聊中发送指令 `/codeh` `/code-help`
 
-## 四、🎈连接说明
+### 四、🎈连接说明
 
 在具有公网IP的服务器上，接收来自github webhook消息。
 
@@ -111,6 +113,102 @@ yarn dev --login onebot
 # release 版
 yarn app --login onebot
 ```
+
+## ☀️阿柠檬机器人错误上报
+
+### 一、设置token
+
+- 进入要启用的聊天发送指令`/codeu alert add`
+- 机器人会私聊返回一个`token`，复制并保存。或查看配置文件`alert_token`项。
+
+### 二、机器人POST错误上报
+
+机器人开发获取报错信息并按照如下新增POST请求即可。
+
+POST请求 URL： `http://[ip]:17117/apps/alemonjs-code/api/alert/warning`
+
+请求头header：
+
+```yaml
+"content-type": "application/json",
+"x-warning-report-token": "12位token字符串"
+```
+
+请求body(POST) -> JSON：
+
+```json
+{
+    "title": "标题",
+    "message": "错误信息",
+    "level": "error",
+    "timestamp": "时间戳"
+}
+```
+
+<details><summary>伪代码示例，点击展开</summary>
+
+```js
+// 定义请求的 URL 和 token
+const postUrl = 'http://[ip]:17117/apps/alemonjs-code/api/alert/warning';
+const token = '你的12位token字符串'; // 替换为实际 token
+
+// 定义错误信息内容
+const payload = {
+    title: '标题',
+    message: '错误信息',
+    level: 'error',
+    timestamp: new Date().toISOString() // 当前时间戳
+};
+
+// 发送 POST 请求
+fetch(postUrl, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'x-warning-report-token': token
+    },
+    body: JSON.stringify(payload)
+})
+    .then(response => {
+        if (response.ok) {
+            console.log('错误报告发送成功');
+        } else {
+            console.error('发送失败，状态码:', response.status);
+        }
+    })
+    .catch(error => {
+        console.error('请求出错:', error);
+    });
+```
+
+</details>
+
+## ☀️Github Actions
+
+### 一、设置Github Actions
+
+- 登录Github，`个人设置` > `Developer settings` > `Personal access tokens` > `Generate new token`
+
+- 勾选`repo`权限，点击`Generate token`
+
+- 复制生成的`token`并保存，后续配置使用。
+
+### 二、编辑workflows文件
+
+编辑仓库分支路径`.github/workflows/`下的工作流文件，新增`workflow_dispatch`项：
+
+[workflow_dispatch设置官方说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)
+
+```yaml
+on:
+    workflow_dispatch:
+```
+
+### 三、开发小助手发送指令
+
+- 机器人发送指令：`/codem -ga add <用户名/仓库名> : <分支名> : <workflow文件名> : <token>`。具体参数查看仓库获取。
+
+更多指令发送：`/code -h` 查看
 
 ## 开发
 
