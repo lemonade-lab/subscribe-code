@@ -48,6 +48,7 @@ const res = onResponse(selects, async e => {
 
   if (addAlertToken({ chatId: chatId, token: token, type: chatType })) {
     message.send(format(Text('已启用该聊天用于阿柠檬机器人异常警告推送，Token已私发')));
+    logger.info(`阿柠檬机器人异常警告推送设置：\nChatId: ${chatId}\nToken: ${token}`);
     sendMessage(chatType, e.OpenId, `阿柠檬机器人异常警告推送设置：\nChatId: ${chatId}\nToken: ${token}`);
   } else {
     message.send(format(Text('已存在该聊天的阿柠檬机器人异常警告推送设置项，\n如需重新设置请先删除原设置项')));

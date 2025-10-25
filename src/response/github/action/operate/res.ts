@@ -50,7 +50,7 @@ const res = onResponse(selects, async e => {
       message.send(format(Text(`触发 Github Action 失败：\nuserRepoName: ${userRepoName}\nbranch: ${branch}\nfilePath: ${filePath}\n${response.message}`)));
     }
   } else {
-    message.send(format(Text('请输入正确的格式：/code -ga del <userName>/<RepoName>')));
+    message.send(format(Text('请输入正确的格式：/codem -ga opt <userName>/<RepoName> : <branch> : <WorkflowfileName>')));
   }
 });
 

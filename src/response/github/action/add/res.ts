@@ -55,6 +55,7 @@ const res = onResponse(selects, async e => {
       };
 
       if (addActionToken({ userRepoName: userRepoName, token: token, workflows: [workflows] })) {
+        logger.info(`Github Action REST API已设置：\nuserRepoName: ${userRepoName}\nToken: ${token}`);
         message.send(format(Text(`Github Action REST API已设置：\nuserRepoName: ${userRepoName}\nToken: ${token}`)));
       } else {
         message.send(format(Text('Github Action REST API设置失败，已存在此仓库设置，如需修改请先删除原有设置')));
