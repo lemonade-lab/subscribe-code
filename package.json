@@ -1,60 +1,61 @@
 {
-    "name": "alemonjs-code",
-    "version": "0.0.8",
-    "description": "仓库动态订阅",
-    "author": "snowtafir, ningmengchongshui",
-    "type": "module",
-    "private": true,
-    "main": "./lib/index.js",
-    "exports": {
-        ".": "./lib/index.js",
-        "./package": "./package.json"
-    },
-    "scripts": {
-        "app": "node index.js",
-        "server": "node lib/server.js",
-        "dev": "npx lvy dev",
-        "dev-server": "npx lvy dev --server",
-        "dev-view": "npx lvy dev --jsxp",
-        "build": "npx lvy build",
-        "eslint": "eslint src --fix",
-        "format": "prettier --write .",
-        "check-format": "git diff --exit-code",
-        "prepare": "husky"
-    },
-    "dependencies": {
-        "chalk": "^5.4.1",
-        "classnames": "^2.5.1",
-        "dayjs": "^1.11.13",
-        "jsxp": "1.2.2",
-        "raw-body": "^3.0.0"
-    },
-    "peerDependencies": {
-        "alemonjs": "^2.1.0-alpha.37"
-    },
-    "devDependencies": {
-        "@alemonjs/db": "^0.0.11",
-        "@alemonjs/discord": "^2.1.0-alpha.14",
-        "@alemonjs/kook": "^2.1.0-alpha.1",
-        "@alemonjs/onebot": "^2.1.0-alpha.8",
-        "@eslint/js": "^9.14.0",
-        "@types/koa": "^2.15.0",
-        "@types/koa-bodyparser": "^4.3.12",
-        "@types/koa-router": "^7.4.8",
-        "@types/ws": "8.18.1",
-        "alemonjs": "^2.1.0-alpha.37",
-        "cssnano": "^7.0.6",
-        "eslint": "^9.14.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-plugin-prettier": "^5.2.1",
-        "eslint-plugin-react": "^7.37.2",
-        "eslint-plugin-unused-imports": "^4.1.4",
-        "globals": "^15.12.0",
-        "husky": "^9.1.7",
-        "lvyjs": "^0.2.20",
-        "prettier": "^3.5.3",
-        "sass": "^1.83.0",
-        "tailwindcss": "^3",
-        "typescript-eslint": "^8.13.0"
-    }
+  "name": "alemonjs-code",
+  "version": "0.0.9",
+  "description": "仓库动态订阅",
+  "author": "snowtafir, ningmengchongshui",
+  "type": "module",
+  "private": true,
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package": "./package.json"
+  },
+  "scripts": {
+    "app": "node index.js",
+    "server": "node lib/server.js",
+    "dev": "npx lvy dev",
+    "dev-server": "npx lvy dev --server",
+    "dev-view": "npx lvy dev --jsxp",
+    "build": "npx lvy build",
+    "eslint": "eslint src --fix",
+    "format": "prettier --write .",
+    "check-format": "git diff --exit-code",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "classnames": "^2.5.1",
+    "dayjs": "^1.11.13",
+    "jsxp": "1.2.2",
+    "raw-body": "^3.0.0"
+  },
+  "peerDependencies": {
+    "alemonjs": "^2.1.0-alpha.37"
+  },
+  "devDependencies": {
+    "@alemonjs/db": "^0.0.11",
+    "@alemonjs/discord": "^2.1.0-alpha.14",
+    "@alemonjs/kook": "^2.1.0-alpha.1",
+    "@alemonjs/onebot": "^2.1.0-alpha.8",
+    "@eslint/js": "^9.14.0",
+    "@types/koa": "^2.15.0",
+    "@types/koa-bodyparser": "^4.3.12",
+    "@types/koa-router": "^7.4.8",
+    "@types/ws": "8.18.1",
+    "alemonjs": "^2.1.0-alpha.37",
+    "cssnano": "^7.0.6",
+    "eslint": "^9.14.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "globals": "^15.12.0",
+    "husky": "^9.1.7",
+    "lvyjs": "^0.2.20",
+    "prettier": "^3.5.3",
+    "sass": "^1.83.0",
+    "tailwindcss": "^3",
+    "typescript-eslint": "^8.13.0"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

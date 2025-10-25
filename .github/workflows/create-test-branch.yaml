@@ -1,11 +1,7 @@
-name: 创建开发分支
+name: 创建测试分支
 
 on:
   workflow_dispatch:
-    inputs:
-      message:
-        description: '需求(例: userlogin)'
-        required: true
 
 permissions:
   contents: write
@@ -19,16 +15,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 检查分支
-        if: github.ref != 'refs/heads/main'
         run: |
-          echo "错误: 该工作流只能在 main 分支上运行。"
-          exit 1
+          CURRENT_BRANCH=$(git branch --show-current)
+          if [[ ! $CURRENT_BRANCH =~ ^dev- ]]; then
+            echo "错误: 该工作流只能在 dev 分支上运行。当前分支: $CURRENT_BRANCH"
+            exit 1
+          fi
 
-      - name: 根据时间戳生成分支名称
+      - name: 根据当前分支生成QA分支名称
         id: generate-branch
         run: |
-          DATE=$(date -u +'%Y%m%d')
-          BRANCH_NAME="dev-$DATE-${{ github.event.inputs.message }}"
+          CURRENT_BRANCH=$(git branch --show-current)
+          # 去掉 dev- 前缀，添加 test- 前缀
+          BRANCH_NAME="test-${CURRENT_BRANCH#dev-}"
           echo "Generated branch name: $BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 

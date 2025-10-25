@@ -1,11 +1,10 @@
-name: 发布新版本
+name: 构建测试版本
 
 on:
+  push:
+    branches:
+      - 'test-*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: '版本号(自增)'
-        required: false
 
 permissions:
   contents: write
@@ -19,13 +18,15 @@ jobs:
       - name: 结账代码
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 获取完整 tag 历史
+          fetch-depth: 0
 
       - name: 检查分支
-        if: github.ref != 'refs/heads/main'
         run: |
-          echo "错误: 该工作流只能在 main 分支上运行。"
-          exit 1
+          CURRENT_BRANCH=$(git branch --show-current)
+          if [[ ! $CURRENT_BRANCH =~ ^test- ]]; then
+            echo "错误: 该工作流只能在 test 分支上运行。当前分支: $CURRENT_BRANCH"
+            exit 1
+          fi
 
       - name: 设置nodejs版本
         uses: actions/setup-node@v4
@@ -58,28 +59,12 @@ jobs:
         run: |
           yarn install --ignore-engines
 
-      - name: 自动获取/自增版本号
-        id: versioning
+      - name: 获取当前分支名
+        id: branch-info
         run: |
-          # 如果用户输入 version，则直接用
-          if [[ -n "${{ github.event.inputs.version }}" ]]; then
-            VERSION="v${{ github.event.inputs.version }}"
-          else
-            # 自动获取最新 tag
-            LATEST_TAG=$(git tag --sort=-v:refname | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | head -n 1)
-            if [ -z "$LATEST_TAG" ]; then
-              VERSION="v0.0.1"
-            else
-              VERSION_NUM=${LATEST_TAG#v}
-              MAJOR=$(echo $VERSION_NUM | cut -d. -f1)
-              MINOR=$(echo $VERSION_NUM | cut -d. -f2)
-              PATCH=$(echo $VERSION_NUM | cut -d. -f3)
-              PATCH=$((PATCH + 1))
-              VERSION="v$MAJOR.$MINOR.$PATCH"
-            fi
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "本次发布版本号: $VERSION"
+          CURRENT_BRANCH=$(git branch --show-current)
+          echo "current_branch=$CURRENT_BRANCH" >> $GITHUB_OUTPUT
+          echo "当前分支: $CURRENT_BRANCH"
 
       - name: 打包
         run: |
@@ -101,7 +86,9 @@ jobs:
 
       - name: 推送 release
         run: |
-          DEPLOY_BRANCH="release"
+          CURRENT_BRANCH="${{ steps.branch-info.outputs.current_branch }}"
+          # 去掉 test- 前缀，添加 release- 前缀
+          DEPLOY_BRANCH="release-${CURRENT_BRANCH#test-}"
           git fetch origin $DEPLOY_BRANCH || echo "远程分支 $DEPLOY_BRANCH 不存在，准备创建..."
           if ! git show-ref --verify --quiet refs/remotes/origin/$DEPLOY_BRANCH; then
              git checkout -b $DEPLOY_BRANCH
@@ -134,25 +121,16 @@ jobs:
           jq 'del(.workspaces)' package.json > package.json.tmp && mv package.json.tmp package.json
           jq 'del(.private)' package.json > package.json.tmp && mv package.json.tmp package.json
           jq 'del(.scripts)' package.json > package.json.tmp && mv package.json.tmp package.json
-          jq --arg version "${{ steps.versioning.outputs.version }}" '.version = ($version | sub("^v";""))' package.json > package.json.tmp && mv package.json.tmp package.json
 
           # 开始产出
           git config --local user.email "ningmengchongshui@gmail.com"
           git config --local user.name "ningmengchongshui"
           git config --local push.autoSetupRemote true
           git add -A
-          git commit -m "${{ steps.versioning.outputs.version }}"
+          git commit -m "Build from ${{ steps.branch-info.outputs.current_branch }}"
           git push origin $DEPLOY_BRANCH || {
             echo "错误：推送失败，请检查..."
             exit 1
           }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 打 tag 并推送
-        run: |
-          TAG="${{ steps.versioning.outputs.version }}"
-          git tag -f $TAG
-          git push origin $TAG --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
