@@ -17,7 +17,7 @@ https://github.com/lemonade-lab/alemongo
 地址
 
 ```sh
-https://github.com/xiuxianjs/openai.git
+https://github.com/lemonade-lab/subscribe-code.git
 ```
 
 分支
@@ -29,7 +29,7 @@ release
 ### 本地模板
 
 ```sh
-git clone --depth=1 -b release  https://github.com/xiuxianjs/openai.git ./packages/openai
+git clone --depth=1 -b release  https://github.com/lemonade-lab/subscribe-code.git ./packages/subscribe-code
 ```
 
 ## ⭐Github Webhook
@@ -203,7 +203,7 @@ fetch(postUrl, {
 
 编辑仓库分支路径`.github/workflows/`下的工作流文件，新增`workflow_dispatch`项：
 
-[workflow_dispatch设置官方说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)
+[workflow_dispatch设置官方说明](https://docs.github.com/cn/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)
 
 ```yaml
 on:

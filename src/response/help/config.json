@@ -34,19 +34,23 @@
     ]
   },
   {
-    "title": "GitHub Actions",
+    "title": "GitHub Actions, <>表示参数，[]表示可选参数",
     "list": [
       {
         "title": "/codem -ga add <用户名/仓库名>:<分支名>:<workflow文件名>:<token>",
-        "desc": "私聊设置Github Action REST API"
+        "desc": "私聊设置Github Action Token"
       },
       {
-        "title": "/codem -ga del <用户名/仓库名>:<分支名>:<workflow文件名>",
-        "desc": "删除设置Github Action REST API"
+        "title": "/codem -ga del <userName>/<RepoName> [:<branch>]",
+        "desc": "删除绑定仓库的Action Token， 可选branch参数仅停用指定分支"
       },
       {
         "title": "/codem -ga list <用户名>/<仓库名>",
-        "desc": "查看已设置Github Action REST API的仓库的工作流列表"
+        "desc": "查看已设置Github Action Token的仓库的工作流列表"
+      },
+      {
+        "title": "/codem -ga opt <userName>/<RepoName> : <branch> : <WorkflowfileName>",
+        "desc": "触发已设置Github Action Token的仓库指定分支的工作流"
       }
     ]
   },
