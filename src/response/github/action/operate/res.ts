@@ -24,7 +24,7 @@ const res = onResponse(selects, async e => {
     const thisWorkflowsListData = getRepoWorkflowsData({ userRepoName: userRepoName });
 
     if (!thisWorkflowsListData) {
-      void message.send(format(Text('没有找到此仓库')));
+      void message.send(format(Text('本地已绑定Token仓库中未找到此仓库')));
 
       return;
     }
